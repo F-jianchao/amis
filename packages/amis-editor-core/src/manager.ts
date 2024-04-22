@@ -1202,6 +1202,14 @@ export class EditorManager {
     if (subRenderer.scaffoldForm) {
       value = await this.scaffold(subRenderer.scaffoldForm, value);
     }
+    if (subRenderer.tags && subRenderer.tags[0] === '表单项') {
+      const oldjson = this.store.getValueOf(id);
+      const {description, required, label} = oldjson;
+      //如果该属性为undefined，就不赋值了
+      label && (value.label = label);
+      description && (value.description = description);
+      required && (value.required = required);
+    }
 
     if (this.replaceChild(id, value, subRenderer, region)) {
       store.closeInsertPanel();
