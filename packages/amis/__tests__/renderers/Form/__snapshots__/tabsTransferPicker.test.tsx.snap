@@ -50,6 +50,7 @@ exports[`Renderer:TabsTransferPicker 1`] = `
                   />
                   <div
                     class="cxd-Form-item cxd-Form-item--normal"
+                    data-amis-name="a"
                     data-role="form-item"
                   >
                     <label
@@ -186,6 +187,7 @@ exports[`Renderer:TabsTransferPicker: dialog open 1`] = `
                   />
                   <div
                     class="cxd-Form-item cxd-Form-item--normal"
+                    data-amis-name="a"
                     data-role="form-item"
                   >
                     <label
@@ -297,7 +299,6 @@ exports[`Renderer:TabsTransferPicker: dialog open 1`] = `
             >
               <div
                 class="cxd-Tabs-linksContainer-wrapper"
-                style="position: relative;"
               >
                 <div
                   class="cxd-Tabs-linksContainer"
@@ -315,7 +316,11 @@ exports[`Renderer:TabsTransferPicker: dialog open 1`] = `
                         <a
                           title="成员"
                         >
-                          成员
+                          <span
+                            class="cxd-Tabs-link-text"
+                          >
+                            成员
+                          </span>
                         </a>
                       </li>
                       <li
@@ -324,7 +329,11 @@ exports[`Renderer:TabsTransferPicker: dialog open 1`] = `
                         <a
                           title="角色"
                         >
-                          角色
+                          <span
+                            class="cxd-Tabs-link-text"
+                          >
+                            角色
+                          </span>
                         </a>
                       </li>
                       <li
@@ -333,50 +342,15 @@ exports[`Renderer:TabsTransferPicker: dialog open 1`] = `
                         <a
                           title="部门"
                         >
-                          部门
+                          <span
+                            class="cxd-Tabs-link-text"
+                          >
+                            部门
+                          </span>
                         </a>
                       </li>
                     </ul>
                   </div>
-                </div>
-                <div
-                  class="resize-sensor"
-                  style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-                >
-                  
-  
-                  <div
-                    class="resize-sensor-expand"
-                    style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                  >
-                    
-    
-                    <div
-                      style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-                    />
-                    
-  
-                  </div>
-                  
-  
-                  <div
-                    class="resize-sensor-shrink"
-                    style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                  >
-                    
-    
-                    <div
-                      style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-                    />
-                    
-  
-                  </div>
-                  
-  
-                  <div
-                    class="resize-sensor-appear"
-                    style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-                  />
                 </div>
               </div>
               <div

@@ -12,6 +12,7 @@ import {LocaleProps, localeable} from 'amis-core';
 import {autobind} from 'amis-core';
 import {ShortCuts} from './DatePicker';
 import type {ViewMode} from './calendar/Calendar';
+import PopUp from './PopUp';
 
 export interface CalendarMobileProps extends ThemeProps, LocaleProps {
   className?: string;
@@ -52,6 +53,7 @@ export interface CalendarMobileProps extends ThemeProps, LocaleProps {
   };
   defaultDate?: moment.Moment;
   isEndDate?: boolean;
+  popOverContainer?: any;
 }
 
 export interface CalendarMobileState {
@@ -64,6 +66,7 @@ export interface CalendarMobileState {
   dateTime: any;
   minDate?: moment.Moment;
   maxDate?: moment.Moment;
+  isPopupOpen: boolean;
 }
 
 export class CalendarMobile extends React.Component<
@@ -95,7 +98,8 @@ export class CalendarMobile extends React.Component<
       showToast: false,
       currentDate: dateRange.currentDate,
       isScrollToBottom: false,
-      dateTime: endDate ? [endDate.hour(), endDate.minute()] : [0, 0]
+      dateTime: endDate ? [endDate.hour(), endDate.minute()] : [0, 0],
+      isPopupOpen: false
     };
   }
 
@@ -529,14 +533,12 @@ export class CalendarMobile extends React.Component<
     ) {
       return this.setState(
         {
-          endDate: newValue
-            .clone()
-            .endOf(precision)
-            .set({
-              hour: dateTime[0],
-              minute: dateTime[1],
-              second: dateTime[2] || 0
-            })
+          endDate: newValue.clone().endOf(precision)
+          // .set({
+          //   hour: dateTime[0],
+          //   minute: dateTime[1],
+          //   second: dateTime[2] || 0
+          // })
         },
         () => {
           onChange &&
@@ -718,6 +720,25 @@ export class CalendarMobile extends React.Component<
     );
   }
 
+  @autobind
+  openDatePicker() {
+    this.setState({isPopupOpen: true});
+  }
+
+  @autobind
+  closePopup() {
+    this.setState({isPopupOpen: false});
+  }
+
+  @autobind
+  handleDateChange(currentDate: moment.Moment) {
+    this.setState({
+      currentDate
+    });
+    this.scollToDate(currentDate);
+    this.closePopup();
+  }
+
   render() {
     const {
       className,
@@ -728,7 +749,10 @@ export class CalendarMobile extends React.Component<
       footerExtra,
       timeFormat,
       showViewMode,
-      isDatePicker
+      isDatePicker,
+      locale,
+      popOverContainer,
+      timeConstraints
     } = this.props;
     const __ = this.props.translate;
 
@@ -739,7 +763,8 @@ export class CalendarMobile extends React.Component<
       showToast,
       isScrollToBottom,
       minDate,
-      maxDate
+      maxDate,
+      isPopupOpen
     } = this.state;
     let dateNow = currentDate
       ? currentDate.format(
@@ -759,7 +784,7 @@ export class CalendarMobile extends React.Component<
                 &lsaquo;
               </a>
             )}
-            {dateNow}
+            <span onClick={this.openDatePicker}>{dateNow}</span>
             {(currentDate &&
               currentDate.isSameOrAfter(maxDate, showViewMode)) ||
             isScrollToBottom ? null : (
@@ -823,6 +848,29 @@ export class CalendarMobile extends React.Component<
             {__('Calendar.toast')}
           </div>
         ) : null}
+
+        <PopUp
+          className={cx(`DatePicker-popup DatePicker-mobile`)}
+          container={popOverContainer}
+          isShow={isPopupOpen}
+          showClose={false}
+          onHide={this.closePopup}
+        >
+          <Calendar
+            value={currentDate}
+            onChange={this.handleDateChange}
+            requiredConfirm={false}
+            isValidDate={this.checkIsValidDate}
+            viewMode="months"
+            timeConstraints={timeConstraints}
+            input={false}
+            onClose={this.closePopup}
+            locale={locale}
+            minDate={minDate}
+            maxDate={maxDate}
+            mobileUI
+          />
+        </PopUp>
       </div>
     );
   }

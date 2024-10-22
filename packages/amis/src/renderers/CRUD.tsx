@@ -2,15 +2,9 @@ import React from 'react';
 import isEqual from 'lodash/isEqual';
 import pickBy from 'lodash/pickBy';
 import omitBy from 'lodash/omitBy';
-import {
-  Renderer,
-  RendererProps,
-  evalExpressionWithConditionBuilder,
-  filterTarget,
-  mapTree
-} from 'amis-core';
+import {Renderer, RendererProps, filterTarget, mapTree} from 'amis-core';
 import {SchemaNode, Schema, ActionObject, PlainObject} from 'amis-core';
-import {CRUDStore, ICRUDStore} from 'amis-core';
+import {CRUDStore, ICRUDStore, getMatchedEventTargets} from 'amis-core';
 import {
   createObject,
   extendObject,
@@ -688,7 +682,11 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       )
     ) {
       dataInvalid = true;
-    } else if (!props.api && isPureVariable(props.source)) {
+    } else if (
+      !props.api &&
+      isPureVariable(props.source) &&
+      props.data !== prevProps.data
+    ) {
       const next = resolveVariableAndFilter(props.source, props.data, '| raw');
 
       if (!this.lastData || this.lastData !== next) {
@@ -770,18 +768,26 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       const idx: number = (ctx as any).index;
       const length = store.items.length;
       stopAutoRefreshWhenModalIsOpen && clearTimeout(this.timer);
-      store.openDialog(
-        ctx,
-        {
-          hasNext: idx < length - 1,
-          nextIndex: idx + 1,
-          hasPrev: idx > 0,
-          prevIndex: idx - 1,
-          index: idx
-        },
-        action.callback,
-        delegate || (this.context as any)
-      );
+      return new Promise<any>(resolve => {
+        store.openDialog(
+          ctx,
+          {
+            hasNext: idx < length - 1,
+            nextIndex: idx + 1,
+            hasPrev: idx > 0,
+            prevIndex: idx - 1,
+            index: idx
+          },
+          (confirmed: any, value: any) => {
+            action.callback?.(confirmed, value);
+            resolve({
+              confirmed,
+              value
+            });
+          },
+          delegate || (this.context as any)
+        );
+      });
     } else if (action.actionType === 'ajax') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
       const data = ctx;
@@ -948,7 +954,8 @@ export default class CRUD extends React.Component<CRUDProps, any> {
   }
 
   handleFilterInit(values: object) {
-    const {defaultParams, data, store, orderBy, orderDir} = this.props;
+    const {defaultParams, data, store, orderBy, orderDir, dispatchEvent} =
+      this.props;
     const params = {...defaultParams};
 
     if (orderBy) {
@@ -1116,7 +1123,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       env
     } = this.props;
 
-    store.closeDialog(true);
+    store.closeDialog(true, values);
     const dialogAction = store.action as ActionObject;
 
     if (stopAutoRefreshWhenModalIsOpen && interval) {
@@ -1234,7 +1241,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     });
   }
 
-  search(
+  async search(
     values?: any,
     silent?: boolean,
     clearSelection?: boolean,
@@ -1293,98 +1300,87 @@ export default class CRUD extends React.Component<CRUDProps, any> {
             'options'
           ) as any)
         : undefined;
-    isEffectiveApi(api, data)
-      ? store
-          .fetchInitData(api, data, {
-            successMessage: messages && messages.fetchSuccess,
-            errorMessage: messages && messages.fetchFailed,
-            autoAppend: true,
-            forceReload,
-            loadDataOnce,
-            source,
-            silent,
-            pageField,
-            perPageField,
-            loadDataMode,
-            syncResponse2Query,
-            columns: store.columns ?? columns,
-            matchFunc
+    if (isEffectiveApi(api, data)) {
+      const value = await store.fetchInitData(api, data, {
+        successMessage: messages && messages.fetchSuccess,
+        errorMessage: messages && messages.fetchFailed,
+        autoAppend: true,
+        forceReload,
+        loadDataOnce,
+        source,
+        silent,
+        pageField,
+        perPageField,
+        loadDataMode,
+        syncResponse2Query,
+        columns: store.columns ?? columns,
+        matchFunc
+      });
+      if (!isAlive(store)) {
+        return value;
+      }
+
+      const {page, lastPage, msg, error} = store;
+
+      if (isInit) {
+        // 初始化请求完成
+        const rendererEvent = await dispatchEvent?.(
+          'fetchInited',
+          createObject(this.props.data, {
+            responseData: value?.ok ? store.data ?? {} : value,
+            responseStatus:
+              value?.status === undefined ? (error ? 1 : 0) : value?.status,
+            responseMsg: msg
           })
-          .then(async value => {
-            if (!isAlive(store)) {
-              return value;
-            }
+        );
 
-            const {page, lastPage, data, msg, error} = store;
+        if (rendererEvent?.prevented) {
+          return store.data;
+        }
+      }
 
-            if (isInit) {
-              // 初始化请求完成
-              const rendererEvent = await dispatchEvent?.(
-                'fetchInited',
-                createObject(this.props.data, {
-                  responseData: value?.ok ? data ?? {} : value,
-                  responseStatus:
-                    value?.status === undefined
-                      ? error
-                        ? 1
-                        : 0
-                      : value?.status,
-                  responseMsg: msg
-                })
-              );
+      // 空列表 且 页数已经非法超出，则跳转到最后的合法页数
+      if (
+        !store.data.items.length &&
+        !interval &&
+        page > 1 &&
+        lastPage < page
+      ) {
+        this.search(
+          {
+            ...store.query,
+            [pageField || 'page']: lastPage
+          },
+          false,
+          undefined
+        );
+      }
 
-              if (rendererEvent?.prevented) {
-                return;
-              }
-            }
+      value?.ok && // 接口正常返回才继续轮训
+        interval &&
+        this.mounted &&
+        (!stopAutoRefreshWhen ||
+          !(
+            (stopAutoRefreshWhenModalIsOpen && store.hasModalOpened) ||
+            evalExpression(
+              stopAutoRefreshWhen,
+              createObject(store.data, store.query)
+            )
+          )) &&
+        (this.timer = setTimeout(
+          silentPolling
+            ? this.silentSearch.bind(this, undefined, undefined, true)
+            : this.search.bind(this, undefined, undefined, undefined, true),
+          Math.max(interval, 1000)
+        ));
+    } else if (source) {
+      store.initFromScope(data, source, {
+        columns: store.columns ?? columns,
+        matchFunc
+      });
+    }
 
-            // 空列表 且 页数已经非法超出，则跳转到最后的合法页数
-            if (
-              !store.data.items.length &&
-              !interval &&
-              page > 1 &&
-              lastPage < page
-            ) {
-              this.search(
-                {
-                  ...store.query,
-                  [pageField || 'page']: lastPage
-                },
-                false,
-                undefined
-              );
-            }
-
-            value?.ok && // 接口正常返回才继续轮训
-              interval &&
-              this.mounted &&
-              (!stopAutoRefreshWhen ||
-                !(
-                  (stopAutoRefreshWhenModalIsOpen && store.hasModalOpened) ||
-                  evalExpression(
-                    stopAutoRefreshWhen,
-                    createObject(store.data, store.query)
-                  )
-                )) &&
-              (this.timer = setTimeout(
-                silentPolling
-                  ? this.silentSearch.bind(this, undefined, undefined, true)
-                  : this.search.bind(
-                      this,
-                      undefined,
-                      undefined,
-                      undefined,
-                      true
-                    ),
-                Math.max(interval, 1000)
-              ));
-            return value;
-          })
-      : source &&
-        store.initFromScope(data, source, {
-          columns: store.columns ?? columns,
-          matchFunc
-        });
+    return store.data;
   }
 
   silentSearch(values?: object, clearSelection?: boolean, forceReload = false) {
@@ -1428,9 +1424,13 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     this.search(undefined, undefined, undefined);
 
     if (autoJumpToTopOnPagerChange && this.control) {
-      (findDOMNode(this.control) as HTMLElement).scrollIntoView();
-      const scrolledY = window.scrollY;
-      scrolledY && window.scroll(0, scrolledY);
+      if (this.control.scrollToTop) {
+        this.control.scrollToTop();
+      } else {
+        (findDOMNode(this.control) as HTMLElement).scrollIntoView();
+        const scrolledY = window.scrollY;
+        scrolledY && window.scroll(0, scrolledY);
+      }
     }
   }
 
@@ -1452,7 +1452,8 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       primaryField,
       env,
       messages,
-      reload
+      reload,
+      dispatchEvent
     } = this.props;
 
     if (Array.isArray(rows)) {
@@ -1478,18 +1479,41 @@ export default class CRUD extends React.Component<CRUDProps, any> {
         data.unModifiedItems = unModifiedItems;
       }
 
-      store
+      return store
         .saveRemote(quickSaveApi, data, {
           successMessage: messages && messages.saveFailed,
           errorMessage: messages && messages.saveSuccess
         })
-        .then(() => {
+        .then(async result => {
+          // 如果请求 cancel 了，会来到这里
+          if (!result) {
+            return;
+          }
+
+          const event = await dispatchEvent?.(
+            'quickSaveSucc',
+            extendObject(data, {
+              result: result
+            })
+          );
+
+          if (event?.prevented) {
+            return;
+          }
+
           const finalReload = options?.reload ?? reload;
-          finalReload
+          return finalReload
             ? this.reloadTarget(filterTarget(finalReload, data), data)
             : this.search(undefined, undefined, true, true);
         })
-        .catch(() => {});
+        .catch(async err => {
+          await dispatchEvent?.(
+            'quickSaveFail',
+            createObject(this.props.data, {
+              error: err
+            })
+          );
+        });
     } else {
       if (!isEffectiveApi(quickSaveItemApi)) {
         env && env.alert('CRUD quickSaveItemApi is required!');
@@ -1503,23 +1527,52 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       });
 
       const sendData = createObject(data, rows);
-      store
+      return store
         .saveRemote(quickSaveItemApi, sendData)
-        .then(() => {
+        .then(async (result: any) => {
+          // 如果请求 cancel 了，会来到这里
+          if (!result) {
+            return;
+          }
+          const event = await dispatchEvent?.(
+            'quickSaveItemSucc',
+            extendObject(data, {
+              result: result
+            })
+          );
+
+          if (event?.prevented) {
+            return;
+          }
+
           const finalReload = options?.reload ?? reload;
-          finalReload
+          return finalReload
             ? this.reloadTarget(filterTarget(finalReload, data), data)
             : this.search(undefined, undefined, true, true);
         })
-        .catch(() => {
+        .catch(async err => {
           options?.resetOnFailed && this.control.reset();
+
+          await dispatchEvent?.(
+            'quickSaveItemFail',
+            createObject(this.props.data, {
+              error: err
+            })
+          );
         });
     }
   }
 
   handleSaveOrder(moved: Array<object>, rows: Array<object>) {
-    const {store, saveOrderApi, orderField, primaryField, env, reload} =
-      this.props;
+    const {
+      store,
+      saveOrderApi,
+      orderField,
+      primaryField,
+      env,
+      reload,
+      dispatchEvent
+    } = this.props;
 
     if (!saveOrderApi) {
       env && env.alert('CRUD saveOrderApi is required!');
@@ -1619,14 +1672,38 @@ export default class CRUD extends React.Component<CRUDProps, any> {
         ));
     }
 
-    isEffectiveApi(saveOrderApi, model) &&
+    return (
+      isEffectiveApi(saveOrderApi, model) &&
       store
         .saveRemote(saveOrderApi, model)
-        .then(() => {
+        .then(async result => {
+          // 如果请求 cancel 了，会来到这里
+          if (!result) {
+            return;
+          }
+          const event = await dispatchEvent?.(
+            'saveOrderSucc',
+            extendObject(model, {
+              result: result
+            })
+          );
+
+          if (event?.prevented) {
+            return;
+          }
+
           reload && this.reloadTarget(filterTarget(reload, model), model);
           this.search(undefined, undefined, true, true);
         })
-        .catch(() => {});
+        .catch(async err => {
+          await dispatchEvent?.(
+            'saveOrderFail',
+            createObject(this.props.data, {
+              error: err
+            })
+          );
+        })
+    );
   }
 
   handleSelect(items: Array<any>, unSelectedItems: Array<any>) {
@@ -1774,7 +1851,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       perPageField,
       replace
     );
-    this.search(
+    return this.search(
       undefined,
       undefined,
       clearSelection ?? replace,
@@ -1786,12 +1863,13 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     subpath?: string,
     query?: any,
     replace?: boolean,
-    resetPage?: boolean
+    resetPage?: boolean,
+    args?: any
   ) {
     if (query) {
       return this.receive(query, undefined, replace, resetPage, true);
     } else {
-      this.search(undefined, undefined, true, true);
+      return this.search(undefined, undefined, true, true);
     }
   }
 
@@ -1802,7 +1880,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     resetPage?: boolean,
     clearSelection?: boolean
   ) {
-    this.handleQuery(values, true, replace, resetPage, clearSelection);
+    return this.handleQuery(values, true, replace, resetPage, clearSelection);
   }
 
   reloadTarget(target: string, data: any) {
@@ -1813,9 +1891,39 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     // implement this.
   }
 
-  doAction(action: ActionObject, data: object, throwErrors: boolean = false) {
-    if (action.actionType === 'submitQuickEdit') {
-      return this.control?.doAction(action, data, throwErrors);
+  async doAction(
+    action: ActionObject,
+    data: object,
+    throwErrors: boolean = false,
+    args?: any
+  ) {
+    const {store} = this.props;
+    if (
+      action.actionType &&
+      [
+        'submitQuickEdit',
+        'toggleExpanded',
+        'setExpanded',
+        'initDrag',
+        'cancelDrag'
+      ].includes(action.actionType)
+    ) {
+      return this.control?.doAction(action, data, throwErrors, args);
+    } else if (action.actionType === 'selectAll') {
+      return this.handleSelect(store.items.concat(), []);
+    } else if (action.actionType === 'clearAll') {
+      return this.handleSelect([], store.items.concat());
+    } else if (action.actionType === 'select') {
+      const selectedItems = await getMatchedEventTargets(
+        store.items,
+        data,
+        args?.index,
+        args?.condition
+      );
+      const unSelectedItems = store.items.filter(
+        item => !selectedItems.includes(item)
+      );
+      return this.handleSelect(selectedItems, unSelectedItems);
     }
 
     return this.handleAction(undefined, action, data, throwErrors);
@@ -2544,6 +2652,8 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       headerToolbarRender,
       footerToolbarRender,
       testIdBuilder,
+      id,
+      filterCanAccessSuperData = true,
       ...rest
     } = this.props;
 
@@ -2554,6 +2664,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
           'is-mobile': isMobile()
         })}
         style={style}
+        data-id={id}
         {...testIdBuilder?.getChild('wrapper').getTestId()}
       >
         {filter && (!store.filterTogggable || store.filterVisible)
@@ -2579,7 +2690,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
                 onSubmit: this.handleFilterSubmit,
                 onInit: this.handleFilterInit,
                 formStore: undefined,
-                canAccessSuperData: false
+                canAccessSuperData: filterCanAccessSuperData
               }
             )
           : null}
@@ -2592,6 +2703,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
           'body',
           {
             ...rest,
+            id,
             // 通用事件 例如cus-event 如果直接透传给table 则会被触发2次
             // 因此只将下层组件table、cards中自定义事件透传下去 否则通过crud配置了也不会执行
             onEvent: this.filterOnEvent(onEvent),
@@ -2603,6 +2715,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
             className: cx('Crud-body', bodyClassName),
             ref: this.controlRef,
             autoGenerateFilter: !filter && autoGenerateFilter,
+            filterCanAccessSuperData,
             autoFillHeight: autoFillHeight,
             selectable: !!(
               (this.hasBulkActionsToolbar() && this.hasBulkActions()) ||
@@ -2615,12 +2728,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
                   ? true
                   : false
                 : multiple,
-            selected:
-              pickerMode ||
-              keepItemSelectionOnPageChange ||
-              maxItemSelectionLength
-                ? store.selectedItemsAsArray
-                : undefined,
+            selected: store.selectedItemsAsArray,
             strictMode,
             keepItemSelectionOnPageChange,
             maxKeepItemSelectionLength,
@@ -2646,7 +2754,9 @@ export default class CRUD extends React.Component<CRUDProps, any> {
             headerToolbarRender: this.renderHeaderToolbar,
             footerToolbarRender: this.renderFooterToolbar,
             data: store.mergedData,
-            loading: store.loading
+            loading: store.loading,
+            host: this,
+            testIdBuilder: testIdBuilder?.getChild('body')
           }
         )}
         {render(
@@ -2699,7 +2809,11 @@ export class CRUDRenderer extends CRUD {
     args?: any
   ) {
     const scoped = this.context as IScopedContext;
-    if (subpath) {
+    if (args?.index || args?.condition) {
+      // 局部刷新
+      // 由内容组件去实现
+      return this.control?.reload('', query, ctx, undefined, undefined, args);
+    } else if (subpath) {
       return scoped.reload(
         query ? `${subpath}?${qsstringify(query)}` : subpath,
         ctx
@@ -2709,7 +2823,7 @@ export class CRUDRenderer extends CRUD {
     return super.reload(subpath, query, replace, args?.resetPage ?? true);
   }
 
-  receive(
+  async receive(
     values: any,
     subPath?: string,
     replace?: boolean,
@@ -2751,12 +2865,13 @@ export class CRUDRenderer extends CRUD {
       return this.control?.setData?.(values, replace, index, condition);
     } else {
       const total = values?.total || values?.count;
+      const items = values.rows ?? values.items; // 兼容没传items的情况
       if (total !== undefined) {
         store.updateTotal(parseInt(total as any, 10));
       }
 
       return store.updateData(
-        {...values, items: values.rows ?? values.items}, // 做个兼容
+        {...values, ...(items ? {items} : {})}, // 做个兼容
         undefined,
         replace
       );

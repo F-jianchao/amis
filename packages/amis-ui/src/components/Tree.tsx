@@ -257,7 +257,7 @@ export class TreeSelector extends React.Component<
       dropIndicator: undefined
     };
 
-    this.syncUnFolded(props);
+    this.syncUnFolded(props, undefined, true);
     this.flattenOptions(props, true);
   }
 
@@ -316,11 +316,16 @@ export class TreeSelector extends React.Component<
     onExpandTree?.(nodePathArr);
   }
 
-  syncUnFolded(props: TreeSelectorProps, unfoldedLevel?: number) {
+  syncUnFolded(
+    props: TreeSelectorProps,
+    unfoldedLevel?: number,
+    initial?: boolean
+  ) {
     // 传入默认展开层级需要重新初始化unfolded
     let initFoldedLevel = typeof unfoldedLevel !== 'undefined';
-    let expandLevel =
-      Number(initFoldedLevel ? unfoldedLevel : props.unfoldedLevel) - 1;
+    let expandLevel = Number(
+      initFoldedLevel ? unfoldedLevel : props.unfoldedLevel
+    );
 
     // 初始化树节点的展开状态
     let unfolded = this.unfolded;
@@ -360,7 +365,7 @@ export class TreeSelector extends React.Component<
     });
 
     initFoldedLevel && this.forceUpdate();
-
+    this.flattenOptions(undefined, initial);
     return unfolded;
   }
 
@@ -1271,15 +1276,7 @@ export class TreeSelector extends React.Component<
                     : this.handleSelect(item))
                 }
               >
-                {iconValue ? (
-                  getIcon(iconValue) ? (
-                    <Icon icon={iconValue} className="icon" />
-                  ) : React.isValidElement(iconValue) ? (
-                    iconValue
-                  ) : (
-                    <i className={iconValue}></i>
-                  )
-                ) : null}
+                {iconValue ? <Icon icon={iconValue} className="icon" /> : null}
               </i>
             ) : null}
 
@@ -1309,12 +1306,11 @@ export class TreeSelector extends React.Component<
                 : `${item[labelField]}`}
             </span>
 
-            {!disabled &&
-            !isAdding &&
-            !isEditing &&
-            !(item[deferField] && !item.loaded) ? (
+            {!disabled && !isAdding && !isEditing ? (
               <div className={cx('Tree-item-icons')}>
-                {creatable && hasAbility(item, 'creatable') ? (
+                {creatable &&
+                !(item[deferField] && !item.loaded) &&
+                hasAbility(item, 'creatable') ? (
                   <TooltipWrapper
                     placement={'bottom'}
                     tooltip={__(createTip)}

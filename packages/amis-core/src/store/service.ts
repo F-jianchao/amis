@@ -51,7 +51,7 @@ export const ServiceStore = iRendererStore
       if (concatFields) {
         data = concatData(data, self.data, concatFields);
       }
-      const newData = extendObject(self.pristine, data, !replace);
+      const newData = extendObject(self.data, data, !replace);
       self.data = self.pristine = newData;
     }
 
@@ -202,7 +202,10 @@ export const ServiceStore = iRendererStore
               normalizeApiResponseData(json.data),
               undefined,
               !!(api as ApiObject).replaceData,
-              (api as ApiObject).concatDataFields
+              (api as ApiObject).concatDataFields,
+              {
+                type: 'api'
+              }
             );
 
           self.hasRemoteData = true;
@@ -301,7 +304,10 @@ export const ServiceStore = iRendererStore
               normalizeApiResponseData(json.data),
               undefined,
               !!(api as ApiObject).replaceData,
-              (api as ApiObject).concatDataFields
+              (api as ApiObject).concatDataFields,
+              {
+                type: 'api'
+              }
             );
         }
 
@@ -471,7 +477,10 @@ export const ServiceStore = iRendererStore
                 json.data.data,
                 undefined,
                 !!(api as ApiObject).replaceData,
-                (api as ApiObject).concatDataFields
+                (api as ApiObject).concatDataFields,
+                {
+                  type: 'api'
+                }
               );
           }
 

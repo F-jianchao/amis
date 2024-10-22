@@ -33,6 +33,7 @@ exports[`Renderer:radios 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="radios"
           data-role="form-item"
         >
           <label
@@ -49,7 +50,7 @@ exports[`Renderer:radios 1`] = `
             </span>
           </label>
           <div
-            class="cxd-RadiosControl cxd-Form-control is-inline"
+            class="cxd-RadiosControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--radio cxd-Checkbox--full"
@@ -111,6 +112,7 @@ exports[`Renderer:radios 1`] = `
         </div>
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="radios"
           data-role="form-item"
         >
           <label
@@ -183,6 +185,7 @@ exports[`Renderer:radios 2`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="radios"
           data-role="form-item"
         >
           <label
@@ -199,7 +202,7 @@ exports[`Renderer:radios 2`] = `
             </span>
           </label>
           <div
-            class="cxd-RadiosControl cxd-Form-control is-inline"
+            class="cxd-RadiosControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--radio cxd-Checkbox--full"
@@ -261,6 +264,7 @@ exports[`Renderer:radios 2`] = `
         </div>
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="radios"
           data-role="form-item"
         >
           <label
@@ -329,6 +333,7 @@ exports[`Renderer:radios source & autoFill 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="radios"
           data-role="form-item"
         >
           <label
@@ -345,7 +350,7 @@ exports[`Renderer:radios source & autoFill 1`] = `
             </span>
           </label>
           <div
-            class="cxd-RadiosControl cxd-Form-control"
+            class="cxd-RadiosControl cxd-Form-control is-thin"
           >
             <div
               class="cxd-Grid"
@@ -409,6 +414,7 @@ exports[`Renderer:radios source & autoFill 1`] = `
         </div>
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="radios"
           data-role="form-item"
         >
           <label

@@ -43,6 +43,8 @@ import {
   getSortData
 } from './util';
 
+import type {TestIdBuilder} from 'amis-core';
+
 export interface ColumnProps {
   title: string | React.ReactNode | Function;
   name: string;
@@ -137,6 +139,9 @@ export interface TableProps extends ThemeProps, LocaleProps, SpinnerExtraProps {
   className?: string;
   dataSource: Array<any>;
   classnames: ClassNamesFn;
+  headerClassName?: string;
+  bodyClassname?: string;
+  rowClassname?: string;
   columns: Array<ColumnProps>;
   scroll?: ScrollProps;
   rowSelection?: RowSelectionProps;
@@ -176,6 +181,7 @@ export interface TableProps extends ThemeProps, LocaleProps, SpinnerExtraProps {
    */
   autoFillHeight?: boolean | AutoFillHeightObject;
   lazyRenderAfter?: boolean;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export interface ScrollProps {
@@ -682,7 +688,9 @@ export class Table extends React.PureComponent<TableProps, TableState> {
       dataSource,
       onSort,
       onSelectAll,
-      onFilter
+      onFilter,
+      testIdBuilder,
+      headerClassName
     } = this.props;
 
     const rowSelectionKeyField = this.getRowSelectionKeyField();
@@ -717,6 +725,7 @@ export class Table extends React.PureComponent<TableProps, TableState> {
         orderBy={this.state.sort?.orderBy}
         popOverContainer={this.getPopOverContainer}
         classnames={cx}
+        className={headerClassName}
         classPrefix={classPrefix}
         onSort={(payload: SortProps, column: ColumnProps) => {
           this.setState({
@@ -751,6 +760,7 @@ export class Table extends React.PureComponent<TableProps, TableState> {
         }}
         onFilter={onFilter}
         onResizeMouseDown={this.onResizeMouseDown.bind(this)}
+        testIdBuilder={testIdBuilder?.getChild('head')}
       ></Head>
     );
   }
@@ -995,7 +1005,8 @@ export class Table extends React.PureComponent<TableProps, TableState> {
       columns,
       lazyRenderAfter,
       classPrefix,
-      classnames: cx
+      classnames: cx,
+      testIdBuilder
     } = this.props;
 
     const rowSelectionKeyField = this.getRowSelectionKeyField();
@@ -1003,6 +1014,7 @@ export class Table extends React.PureComponent<TableProps, TableState> {
       this.state.selectedRowKeys,
       key => key === data[rowSelectionKeyField]
     );
+    const rowTIDBuilder = testIdBuilder?.getChild(`row-${rowIndex}`);
 
     const childrenColumnName = this.getChildrenColumnName();
     // 当前行是否可展开
@@ -1070,6 +1082,7 @@ export class Table extends React.PureComponent<TableProps, TableState> {
         lazyRenderAfter={lazyRenderAfter}
         classnames={cx}
         classPrefix={classPrefix}
+        testIdBuilder={rowTIDBuilder}
         {...checkboxProps}
       />,
       children
@@ -1288,7 +1301,8 @@ export class Table extends React.PureComponent<TableProps, TableState> {
       showHeader,
       itemActions,
       tableLayout,
-      classnames: cx
+      classnames: cx,
+      bodyClassname
     } = this.props;
 
     const hasScrollX = scroll && scroll.x;
@@ -1318,7 +1332,7 @@ export class Table extends React.PureComponent<TableProps, TableState> {
             ...tableStyle,
             tableLayout: tableLayout === 'fixed' ? 'fixed' : 'auto'
           }}
-          className={cx('Table-table')}
+          className={cx('Table-table', bodyClassname)}
         >
           {this.renderColGroup()}
           {showHeader ? this.renderHead() : null}
@@ -1335,7 +1349,8 @@ export class Table extends React.PureComponent<TableProps, TableState> {
       headSummary,
       sticky,
       showHeader,
-      classnames: cx
+      classnames: cx,
+      headerClassName
     } = this.props;
 
     const style = {overflow: 'hidden'};
@@ -1346,16 +1361,25 @@ export class Table extends React.PureComponent<TableProps, TableState> {
     const tableStyle = {};
     if (scroll && (scroll.y || scroll.x)) {
       Object.assign(tableStyle, {
-        width: scroll && scroll.x ? scroll.x + 'px' : '100%'
+        width:
+          scroll && scroll.x
+            ? typeof scroll.x === 'number'
+              ? scroll.x + 'px'
+              : scroll.x
+            : '100%'
       });
     }
 
     return (
       <div
         ref={this.headerDom}
-        className={cx('Table-header', {
-          [cx('Table-sticky-holder')]: !!sticky
-        })}
+        className={cx(
+          'Table-header',
+          {
+            [cx('Table-sticky-holder')]: !!sticky
+          },
+          headerClassName
+        )}
         style={style}
       >
         <table
@@ -1373,7 +1397,7 @@ export class Table extends React.PureComponent<TableProps, TableState> {
   }
 
   renderScrollTableBody() {
-    const {scroll, itemActions, classnames: cx} = this.props;
+    const {scroll, itemActions, classnames: cx, bodyClassname} = this.props;
 
     const style = {};
     const tableStyle = {};
@@ -1384,7 +1408,12 @@ export class Table extends React.PureComponent<TableProps, TableState> {
       });
 
       Object.assign(tableStyle, {
-        width: scroll && scroll.x ? scroll.x + 'px' : '100%'
+        width:
+          scroll && scroll.x
+            ? typeof scroll.x === 'number'
+              ? scroll.x + 'px'
+              : scroll.x
+            : '100%'
       });
     }
 
@@ -1406,7 +1435,7 @@ export class Table extends React.PureComponent<TableProps, TableState> {
           </ItemActionsWrapper>
         ) : null}
         <table
-          className={cx('Table-table')}
+          className={cx('Table-table', bodyClassname)}
           style={{...tableStyle, tableLayout: 'fixed'}}
         >
           {this.renderColGroup()}

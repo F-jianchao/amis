@@ -7,7 +7,8 @@ import {
   resolveVariableAndFilter,
   setVariable,
   setThemeClassName,
-  ValidateError
+  ValidateError,
+  RendererEvent
 } from 'amis-core';
 import {Renderer, RendererProps} from 'amis-core';
 import {SchemaNode, Schema, ActionObject} from 'amis-core';
@@ -277,6 +278,10 @@ export default class Dialog extends React.Component<DialogProps> {
     if (rendererEvent?.prevented) {
       return;
     }
+
+    if (rendererEvent?.pendingPromise.length) {
+      await rendererEvent.allDone();
+    }
     // clear error
     store.updateMessage();
     onClose(confirmed);
@@ -334,7 +339,7 @@ export default class Dialog extends React.Component<DialogProps> {
       return;
     }
 
-    store.closeDialog(true);
+    store.closeDialog(true, values);
   }
 
   handleDialogClose(...args: Array<any>) {
@@ -371,7 +376,7 @@ export default class Dialog extends React.Component<DialogProps> {
       return;
     }
 
-    store.closeDrawer();
+    store.closeDrawer(true, values);
   }
 
   handleDrawerClose(...args: Array<any>) {
@@ -384,13 +389,15 @@ export default class Dialog extends React.Component<DialogProps> {
       return;
     }
 
-    store.closeDrawer();
+    store.closeDrawer(...args);
   }
 
   handleEntered() {
     const {lazySchema, store} = this.props;
 
     store.setEntered(true);
+    // 可能还没来得及关闭，事件动作又打开了这个弹窗，这时候需要重置 busying 状态
+    store.markBusying(false);
     if (typeof lazySchema === 'function') {
       store.setSchema(lazySchema(this.props));
     }
@@ -407,6 +414,8 @@ export default class Dialog extends React.Component<DialogProps> {
     statusStore && isAlive(statusStore) && statusStore.resetAll();
     if (isAlive(store)) {
       store.reset();
+      store.clearMessage();
+      store.markBusying(false);
       store.setEntered(false);
       if (typeof lazySchema === 'function') {
         store.setSchema('');
@@ -425,11 +434,8 @@ export default class Dialog extends React.Component<DialogProps> {
 
     // 如果 dialog 里面不放 form，而是直接放表单项就会进到这里来。
     if (typeof name === 'string') {
-      const mergedData = {
-        ...store.form
-      };
-      setVariable(mergedData, name, data);
-      data = mergedData;
+      store.changeValue(name, data);
+      return;
     }
 
     store.setFormData(data);
@@ -494,6 +500,7 @@ export default class Dialog extends React.Component<DialogProps> {
       onInit: this.handleFormInit,
       onSaved: this.handleFormSaved,
       onActionSensor: this.handleActionSensor,
+      btnDisabled: store.loading,
       syncLocation: false // 弹框中的 crud 一般不需要同步地址栏
     };
 
@@ -552,6 +559,11 @@ export default class Dialog extends React.Component<DialogProps> {
           render(`action/${key}`, action, {
             data: store.formData,
             onAction: this.handleAction,
+            // 以免调用上层弹窗的 onActionSensor 方法
+            // 弹窗观察内部的动作执行，不需要观察到子弹窗里面去
+            // 所以这里传递了 undefined
+            onActionSensor: undefined,
+            btnDisabled: store.loading,
             key,
             disabled: action.disabled || store.loading || !show
           })
@@ -712,7 +724,9 @@ export default class Dialog extends React.Component<DialogProps> {
             ) : null}
             {render('title', title, {
               data: store.formData,
-              onAction: this.handleAction
+              onAction: this.handleAction,
+              onActionSensor: undefined,
+              btnDisabled: store.loading
             })}
           </div>
         ) : showCloseButton !== false && !store.loading ? (
@@ -728,7 +742,9 @@ export default class Dialog extends React.Component<DialogProps> {
         {header
           ? render('header', header, {
               data: store.formData,
-              onAction: this.handleAction
+              onAction: this.handleAction,
+              onActionSensor: undefined,
+              btnDisabled: store.loading
             })
           : null}
 
@@ -795,7 +811,7 @@ export default class Dialog extends React.Component<DialogProps> {
           </div>
         ) : null}
 
-        {this.renderFooter()}
+        {body ? this.renderFooter() : null}
 
         {body
           ? render(
@@ -950,15 +966,16 @@ export class DialogRenderer extends Dialog {
           store.updateMessage(reason.message, true);
           store.markBusying(false);
 
-          if (reason.constructor?.name === ValidateError.name) {
-            clearTimeout(this.clearErrorTimer);
-            this.clearErrorTimer = setTimeout(() => {
-              if (this.isDead) {
-                return;
-              }
-              store.updateMessage('');
-            }, 3000);
-          }
+          // 通常都是数据错误，过 3 秒自动清理错误信息
+          // if (reason.constructor?.name === ValidateError.name) {
+          clearTimeout(this.clearErrorTimer);
+          this.clearErrorTimer = setTimeout(() => {
+            if (this.isDead) {
+              return;
+            }
+            store.updateMessage('');
+          }, 3000);
+          // }
         });
 
       return true;
@@ -976,15 +993,21 @@ export class DialogRenderer extends Dialog {
     action: ActionObject,
     data: object,
     throwErrors: boolean = false,
-    delegate?: IScopedContext
+    delegate?: IScopedContext,
+    rendererEvent?: RendererEvent<any>
   ) {
-    const {onAction, store, onConfirm, env, dispatchEvent, onClose} =
+    const {onAction, store, onConfirm, env, dispatchEvent, onClose, show} =
       this.props;
-    if (action.from === this.$$id) {
+    if (action.from === this.$$id || !show) {
       // 如果是从 children 里面委托过来的，那就直接向上冒泡。
+      // 或者当前弹框已经关闭了，那就不处理。
       return onAction
         ? onAction(e, action, data, throwErrors, delegate || this.context)
         : false;
+    }
+
+    if (rendererEvent?.pendingPromise.length) {
+      await rendererEvent.allDone();
     }
 
     const scoped = this.context as IScopedContext;
@@ -1004,6 +1027,10 @@ export class DialogRenderer extends Dialog {
         return;
       }
 
+      if (rendererEvent?.pendingPromise.length) {
+        await rendererEvent.allDone();
+      }
+
       store.setCurrentAction(action, this.props.resolveDefinitions);
       // clear error
       store.updateMessage();
@@ -1018,8 +1045,13 @@ export class DialogRenderer extends Dialog {
         'confirm',
         createObject(this.props.data, data)
       );
+
       if (rendererEvent?.prevented) {
         return;
+      }
+
+      if (rendererEvent?.pendingPromise.length) {
+        await rendererEvent.allDone();
       }
 
       store.setCurrentAction(action, this.props.resolveDefinitions);
@@ -1035,7 +1067,7 @@ export class DialogRenderer extends Dialog {
       if (!handleResult) {
         // clear error
         store.updateMessage();
-        onClose(true);
+        action.close !== false && onClose(true);
       }
     } else if (action.actionType === 'next' || action.actionType === 'prev') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
@@ -1054,15 +1086,31 @@ export class DialogRenderer extends Dialog {
       }
     } else if (action.actionType === 'dialog') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
-      store.openDialog(
-        data,
-        undefined,
-        action.callback,
-        delegate || (this.context as any)
-      );
+      return new Promise<any>(resolve => {
+        store.openDialog(
+          data,
+          undefined,
+          (confirmed: any, value: any) => {
+            action.callback?.(confirmed, value);
+            resolve({
+              confirmed,
+              value
+            });
+          },
+          delegate || (this.context as any)
+        );
+      });
     } else if (action.actionType === 'drawer') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
-      store.openDrawer(data);
+      return new Promise<any>(resolve => {
+        store.openDrawer(data, undefined, (confirmed: any, value: any) => {
+          action.callback?.(confirmed, value);
+          resolve({
+            confirmed,
+            value
+          });
+        });
+      });
     } else if (action.actionType === 'reload') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
       action.target && scoped.reload(action.target, data);
@@ -1077,7 +1125,7 @@ export class DialogRenderer extends Dialog {
       // do nothing
     } else if (action.actionType === 'ajax') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
-      store
+      return store
         .saveRemote(action.api as string, data, {
           successMessage: action.messages && action.messages.success,
           errorMessage: action.messages && action.messages.failed

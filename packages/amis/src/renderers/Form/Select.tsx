@@ -15,7 +15,10 @@ import {
   isApiOutdated,
   createObject,
   autobind,
-  TestIdBuilder
+  TestIdBuilder,
+  getVariable,
+  CustomStyle,
+  setThemeClassName
 } from 'amis-core';
 import {TransferDropDown, Spinner, Select, SpinnerExtraProps} from 'amis-ui';
 import {FormOptionsSchema, SchemaApi} from '../../Schema';
@@ -225,8 +228,8 @@ export default class SelectControl extends React.Component<SelectProps, any> {
     this.input = ref;
   }
 
-  foucs() {
-    this.input && this.input.focus();
+  focus() {
+    this.input && this.input?.focus?.();
   }
 
   getValue(
@@ -300,6 +303,7 @@ export default class SelectControl extends React.Component<SelectProps, any> {
     const {onChange, setOptions, options, data, dispatchEvent} = this.props;
 
     let additonalOptions: Array<any> = [];
+
     let newValue: string | Option | Array<Option> | void = this.getValue(
       value,
       additonalOptions
@@ -341,7 +345,7 @@ export default class SelectControl extends React.Component<SelectProps, any> {
       throw new Error('fetcher is required');
     }
 
-    if (!formInited) {
+    if (formInited === false && addHook) {
       this.unHook && this.unHook();
       return (this.unHook = addHook(this.loadRemote.bind(this, input), 'init'));
     }
@@ -442,15 +446,76 @@ export default class SelectControl extends React.Component<SelectProps, any> {
   }
 
   doAction(action: ActionObject, data: object, throwErrors: boolean): any {
-    const {resetValue, onChange} = this.props;
+    const {resetValue, onChange, formStore, store, name, valueField} =
+      this.props;
     const actionType = action?.actionType as string;
 
     if (actionType === 'clear') {
       onChange?.('');
     } else if (actionType === 'reset') {
-      const value = this.getValue(resetValue ?? '');
+      const pristineVal =
+        getVariable(formStore?.pristine ?? store?.pristine, name) ?? resetValue;
+      const value = this.getValue({[valueField]: pristineVal ?? ''});
       onChange?.(value);
     }
+  }
+
+  @autobind
+  handleOptionAdd(
+    idx: number | Array<number> = -1,
+    value?: any,
+    skipForm: boolean = false,
+    callback?: (value: any) => any
+  ) {
+    const {onAdd, autoComplete} = this.props;
+
+    onAdd?.(idx, value, skipForm, async () => {
+      callback?.(value);
+
+      if (autoComplete) {
+        await this.loadRemote(this.lastTerm);
+        return false;
+      }
+
+      return;
+    });
+  }
+
+  @autobind
+  handleOptionEdit(
+    value: Option,
+    origin?: Option,
+    skipForm?: boolean,
+    callback?: (value: any) => any
+  ) {
+    const {onEdit, autoComplete} = this.props;
+
+    onEdit?.(value, origin, skipForm, async () => {
+      callback?.(value);
+
+      if (autoComplete) {
+        await this.loadRemote(this.lastTerm);
+        return false;
+      }
+
+      return;
+    });
+  }
+
+  @autobind
+  handleOptionDelete(value: any, callback?: (value: any) => any) {
+    const {onDelete, autoComplete} = this.props;
+
+    onDelete?.(value, async () => {
+      callback?.(value);
+
+      if (autoComplete) {
+        await this.loadRemote(this.lastTerm);
+        return false;
+      }
+
+      return;
+    });
   }
 
   @supportStatic()
@@ -461,6 +526,7 @@ export default class SelectControl extends React.Component<SelectProps, any> {
       showInvalidMatch,
       options,
       className,
+      popoverClassName,
       style,
       loading,
       value,
@@ -484,13 +550,17 @@ export default class SelectControl extends React.Component<SelectProps, any> {
       filterOption,
       ...rest
     } = this.props;
+    const {classPrefix: ns, themeCss} = this.props;
 
     if (noResultsText) {
       noResultsText = render('noResultText', noResultsText);
     }
 
     return (
-      <div className={cx(`${classPrefix}SelectControl`, className)}>
+      <div
+        className={cx(`${classPrefix}SelectControl`, className)}
+        style={style}
+      >
         {['table', 'list', 'group', 'tree', 'chained', 'associated'].includes(
           selectMode
         ) ? (
@@ -498,6 +568,26 @@ export default class SelectControl extends React.Component<SelectProps, any> {
         ) : (
           <Select
             {...rest}
+            onAdd={this.handleOptionAdd}
+            onEdit={this.handleOptionEdit}
+            onDelete={this.handleOptionDelete}
+            className={cx(
+              setThemeClassName({
+                ...this.props,
+                name: 'selectControlClassName',
+                id,
+                themeCss: themeCss
+              })
+            )}
+            popoverClassName={cx(
+              popoverClassName,
+              setThemeClassName({
+                ...this.props,
+                name: 'selectPopoverClassName',
+                id,
+                themeCss: themeCss
+              })
+            )}
             mobileUI={mobileUI}
             popOverContainer={
               mobileUI
@@ -530,6 +620,41 @@ export default class SelectControl extends React.Component<SelectProps, any> {
             overlay={overlay}
           />
         )}
+        <CustomStyle
+          {...this.props}
+          config={{
+            themeCss: themeCss,
+            classNames: [
+              {
+                key: 'selectControlClassName',
+                weights: {
+                  focused: {
+                    suf: '.is-opened:not(.is-mobile)'
+                  },
+                  disabled: {
+                    suf: '.is-disabled'
+                  }
+                }
+              },
+              {
+                key: 'selectPopoverClassName',
+                weights: {
+                  default: {
+                    suf: ` .${ns}Select-option`
+                  },
+                  hover: {
+                    suf: ` .${ns}Select-option.is-highlight`
+                  },
+                  focused: {
+                    inner: `.${ns}Select-option.is-active`
+                  }
+                }
+              }
+            ],
+            id: id
+          }}
+          env={env}
+        />
       </div>
     );
   }

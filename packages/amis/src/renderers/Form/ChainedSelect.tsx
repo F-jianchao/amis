@@ -5,7 +5,10 @@ import {
   OptionsControlProps,
   Option,
   FormOptionsControl,
-  resolveEventData
+  resolveEventData,
+  getVariable,
+  setThemeClassName,
+  CustomStyle
 } from 'amis-core';
 import {Select, Spinner} from 'amis-ui';
 import {Api, ApiObject} from 'amis-core';
@@ -89,13 +92,15 @@ export default class ChainedSelectControl extends React.Component<
   }
 
   doAction(action: ActionObject, data: object, throwErrors: boolean) {
-    const {resetValue, onChange} = this.props;
+    const {resetValue, onChange, formStore, store, name} = this.props;
     const actionType = action?.actionType as string;
 
     if (actionType === 'clear') {
       onChange('');
     } else if (actionType === 'reset') {
-      onChange(resetValue ?? '');
+      const pristineVal =
+        getVariable(formStore?.pristine ?? store?.pristine, name) ?? resetValue;
+      onChange(pristineVal ?? '');
     }
   }
 
@@ -238,7 +243,11 @@ export default class ChainedSelectControl extends React.Component<
       ? value.split(delimiter || ',')
       : [];
     arr.splice(index, arr.length - index);
-    arr.push(joinValues ? currentValue.value : currentValue);
+
+    const pushValue = joinValues ? currentValue.value : currentValue;
+    if (pushValue !== undefined) {
+      arr.push(pushValue);
+    }
 
     const valueRes = this.array2value(arr);
 
@@ -320,6 +329,7 @@ export default class ChainedSelectControl extends React.Component<
       mobileUI,
       env,
       testIdBuilder,
+      popoverClassName,
       ...rest
     } = this.props;
     const arr = Array.isArray(value)
@@ -327,6 +337,8 @@ export default class ChainedSelectControl extends React.Component<
       : value && typeof value === 'string'
       ? value.split(delimiter || ',')
       : [];
+
+    const {themeCss, id} = this.props;
 
     const hasStackLoading = this.state.stack.find((a: StackItem) => a.loading);
 
@@ -340,6 +352,24 @@ export default class ChainedSelectControl extends React.Component<
               ? env?.getModalContainer
               : rest.popOverContainer || env?.getModalContainer
           }
+          className={cx(
+            setThemeClassName({
+              ...this.props,
+              name: 'chainedSelectControlClassName',
+              id,
+              themeCss: themeCss
+            })
+          )}
+          popoverClassName={cx(
+            popoverClassName,
+            setThemeClassName({
+              ...this.props,
+              name: 'chainedSelectPopoverClassName',
+              id,
+              themeCss: themeCss
+            })
+          )}
+          controlStyle={style}
           classPrefix={ns}
           key="base"
           testIdBuilder={testIdBuilder?.getChild('base')}
@@ -368,6 +398,24 @@ export default class ChainedSelectControl extends React.Component<
               value={arr[index + 1]}
               onChange={this.handleChange.bind(this, index + 1)}
               inline
+              controlStyle={style}
+              className={cx(
+                setThemeClassName({
+                  ...this.props,
+                  name: 'chainedSelectControlClassName',
+                  id,
+                  themeCss: themeCss
+                })
+              )}
+              popoverClassName={cx(
+                popoverClassName,
+                setThemeClassName({
+                  ...this.props,
+                  name: 'chainedSelectPopoverClassName',
+                  id,
+                  themeCss: themeCss
+                })
+              )}
             />
           )
         )}
@@ -378,6 +426,41 @@ export default class ChainedSelectControl extends React.Component<
             className={cx(`${ns}ChainedSelectControl-spinner`)}
           />
         )}
+        <CustomStyle
+          {...this.props}
+          config={{
+            themeCss: themeCss,
+            classNames: [
+              {
+                key: 'chainedSelectControlClassName',
+                weights: {
+                  focused: {
+                    suf: '.is-opened:not(.is-mobile)'
+                  },
+                  disabled: {
+                    suf: '.is-disabled'
+                  }
+                }
+              },
+              {
+                key: 'chainedSelectPopoverClassName',
+                weights: {
+                  default: {
+                    suf: ` .${ns}Select-option`
+                  },
+                  hover: {
+                    suf: ` .${ns}Select-option.is-highlight`
+                  },
+                  focused: {
+                    inner: `.${ns}Select-option.is-active`
+                  }
+                }
+              }
+            ],
+            id: id
+          }}
+          env={env}
+        />
       </div>
     );
   }

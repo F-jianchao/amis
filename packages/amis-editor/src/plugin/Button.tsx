@@ -13,6 +13,7 @@ import {getEventControlConfig} from '../renderer/event-control/helper';
 import {RendererPluginAction, RendererPluginEvent} from 'amis-editor-core';
 import type {SchemaObject} from 'amis';
 import {getOldActionSchema} from '../renderer/event-control/helper';
+import {buttonStateFunc} from '../renderer/style-control/helper';
 
 export class ButtonPlugin extends BasePlugin {
   static id = 'ButtonPlugin';
@@ -133,50 +134,6 @@ export class ButtonPlugin extends BasePlugin {
     // const isInDropdown = /(?:\/|^)dropdown-button\/.+$/.test(context.path);
     const isInDropdown = /^button-group\/.+$/.test(context.path);
 
-    const buttonStateFunc = (visibleOn: string, state: string) => {
-      return [
-        getSchemaTpl('theme:font', {
-          label: '文字',
-          name: `themeCss.className.font:${state}`,
-          visibleOn: visibleOn,
-          editorThemePath: [
-            `button1.type.\${level}.${state}.body.font-color`,
-            `button1.size.\${size}.body.font`
-          ]
-        }),
-        getSchemaTpl('theme:colorPicker', {
-          label: '背景',
-          name: `themeCss.className.background:${state}`,
-          labelMode: 'input',
-          needGradient: true,
-          needImage: true,
-          visibleOn: visibleOn,
-          editorThemePath: `button1.type.\${level}.${state}.body.bg-color`
-        }),
-        getSchemaTpl('theme:border', {
-          name: `themeCss.className.border:${state}`,
-          visibleOn: visibleOn,
-          editorThemePath: `button1.type.\${level}.${state}.body.border`
-        }),
-        getSchemaTpl('theme:paddingAndMargin', {
-          name: `themeCss.className.padding-and-margin:${state}`,
-          visibleOn: visibleOn,
-          editorThemePath: `button1.size.\${size}.body.padding-and-margin`
-        }),
-        getSchemaTpl('theme:radius', {
-          name: `themeCss.className.radius:${state}`,
-          visibleOn: visibleOn,
-          editorThemePath: `button1.size.\${size}.body.border`
-        }),
-        getSchemaTpl('theme:select', {
-          label: '图标尺寸',
-          name: `themeCss.iconClassName.iconSize:${state}`,
-          visibleOn: visibleOn,
-          editorThemePath: `button1.size.\${size}.body.icon-size`
-        })
-      ];
-    };
-
     return getSchemaTpl('tabs', [
       {
         title: '属性',
@@ -266,13 +223,13 @@ export class ButtonPlugin extends BasePlugin {
                         '禁用状态下的提示内容，不填则弹出正常提示。可从数据域变量中取值。'
                       ),
                       clearValueOnHidden: true,
-                      visibleOn: 'data.tooltipTrigger !== "focus"'
+                      visibleOn: 'this.tooltipTrigger !== "focus"'
                     }),
                     {
                       type: 'button-group-select',
                       name: 'tooltipTrigger',
                       label: '触发方式',
-                      // visibleOn: 'data.tooltip || data.disabledTip',
+                      // visibleOn: 'this.tooltip || this.disabledTip',
                       size: 'sm',
                       options: [
                         {
@@ -289,7 +246,7 @@ export class ButtonPlugin extends BasePlugin {
                     {
                       type: 'button-group-select',
                       name: 'tooltipPlacement',
-                      // visibleOn: 'data.tooltip || data.disabledTip',
+                      // visibleOn: 'this.tooltip || this.disabledTip',
                       label: '提示位置',
                       size: 'sm',
                       options: [
@@ -348,7 +305,7 @@ export class ButtonPlugin extends BasePlugin {
                 label: '高亮样式',
                 name: 'activeLevel',
                 hidden: isInDropdown,
-                visibleOn: 'data.active'
+                visibleOn: 'this.active'
               }),
 
               getSchemaTpl('switch', {
@@ -368,7 +325,7 @@ export class ButtonPlugin extends BasePlugin {
             body: [
               {
                 type: 'select',
-                name: 'editorState',
+                name: '__editorState',
                 label: '状态',
                 selectFirst: true,
                 options: [
@@ -387,11 +344,11 @@ export class ButtonPlugin extends BasePlugin {
                 ]
               },
               ...buttonStateFunc(
-                "${editorState == 'default' || !editorState}",
+                "${__editorState == 'default' || !__editorState}",
                 'default'
               ),
-              ...buttonStateFunc("${editorState == 'hover'}", 'hover'),
-              ...buttonStateFunc("${editorState == 'active'}", 'active')
+              ...buttonStateFunc("${__editorState == 'hover'}", 'hover'),
+              ...buttonStateFunc("${__editorState == 'active'}", 'active')
             ]
           },
           getSchemaTpl('theme:cssCode', {

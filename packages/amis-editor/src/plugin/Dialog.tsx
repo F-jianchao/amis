@@ -21,7 +21,7 @@ import {
 import {getEventControlConfig} from '../renderer/event-control/helper';
 import omit from 'lodash/omit';
 import type {RendererConfig, Schema} from 'amis-core';
-import {ModalProps} from 'amis-ui/src/components/Modal';
+import {ModalProps} from 'amis-ui/lib/components/Modal';
 import ModalSettingPanel from '../component/ModalSettingPanel';
 import find from 'lodash/find';
 
@@ -570,6 +570,13 @@ export class DialogPlugin extends BasePlugin {
   }
 
   buildSubRenderers() {}
+
+  /**
+   * dialog 高亮区域应该是里面的内容
+   */
+  wrapperResolve(dom: HTMLElement): HTMLElement | Array<HTMLElement> {
+    return dom.lastChild as HTMLElement;
+  }
 
   async buildDataSchemas(
     node: EditorNodeType,

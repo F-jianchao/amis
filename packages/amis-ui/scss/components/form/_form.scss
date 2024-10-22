@@ -25,6 +25,10 @@
 
 .#{$ns}Form-static {
   min-height: var(--Form-input-height);
+  font-size: var(--Form-static-fontSize);
+  color: var(--Form-static-color);
+  line-height: var(--Form-static-lineHeight);
+  font-weight: var(--Form-static-fontWeight);
   &:not(.is-noPaddingY-static) {
     padding-top: var(--Form-label-paddingTop);
     padding-bottom: var(--Form-label-paddingTop);
@@ -57,7 +61,7 @@
   margin-bottom: var(--Form-mode-default-labelGap);
   position: relative;
   font-size: var(--Form-item-fontSize);
-  color: var(--Form-item-fontColor);
+  color: var(--Form-item-color);
 
   > span {
     position: relative;
@@ -386,6 +390,8 @@
     flex-basis: 0;
     flex-grow: 1;
     flex-shrink: 1;
+    min-width: 0;
+    min-height: 0;
   }
 
   .#{$ns}Form-rowInner {
@@ -402,10 +408,74 @@
     > .#{$ns}Form-control {
       flex-basis: 0;
       flex-grow: 1;
+      min-width: 0;
+      min-height: 0;
 
       // &:not(.#{$ns}Form-control--withSize) {
       //   width: var(--Form-control-widthBase);
       // }
+    }
+  }
+
+  .#{$ns}Form-flex {
+    display: flex;
+    // flex-wrap: wrap;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .#{$ns}Form-flex-col {
+    flex-basis: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    padding: calc(var(--Form-item-gap) / 2);
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .#{$ns}Form-flexInner {
+    display: flex;
+    flex-wrap: nowrap;
+
+    > .#{$ns}Form-label {
+      display: inline-block;
+      vertical-align: top;
+      padding-top: var(--Form-label-paddingTop);
+      margin-right: var(--Form-row-gutterWidth);
+      .#{$ns}Remark {
+        vertical-align: initial;
+      }
+    }
+
+    > .#{$ns}Form-value {
+      flex-basis: 0;
+      flex-grow: 1;
+      min-width: 0;
+      .#{$ns}Remark {
+        vertical-align: initial;
+        margin-left: 0;
+      }
+    }
+  }
+
+  .#{$ns}Form-flexInner--label-top {
+    flex-direction: column;
+    > .#{$ns}Form-value {
+      flex-basis: auto;
+    }
+  }
+  .#{$ns}Form-flexInner--label-left {
+    > .#{$ns}Form-label {
+      text-align: left;
+      width: px2rem(76px);
+      word-break: break-all;
+    }
+  }
+  .#{$ns}Form-flexInner--label-right {
+    > .#{$ns}Form-label {
+      text-align: right;
+      width: px2rem(76px);
+      word-break: break-all;
     }
   }
 }
@@ -442,6 +512,8 @@
       display: inline-flex;
 
       & > .#{$ns}Form-value {
+        min-width: 0;
+        min-height: 0;
         flex: 1;
 
         /* 如果size设置了full就占满剩余空间 */
@@ -451,6 +523,10 @@
       }
     }
   }
+}
+
+.#{$ns}Form--column-1 > .#{$ns}Form-item {
+  width: 100%;
 }
 
 .#{$ns}Form--column-2 > .#{$ns}Form-item {
@@ -579,7 +655,6 @@
       overflow-wrap: break-word;
       margin-right: 0;
       margin-bottom: 0;
-      font-size: var(--fontSizeLg);
 
       & + .#{$ns}Form-item-controlBox {
         max-width: calc(100% - 28%);
@@ -596,15 +671,15 @@
     }
 
     .#{$ns}TextControl-input {
-      font-size: var(--fontSizeLg);
-
       input {
-        height: calc(var(--Form-input-lineHeight) * var(--fontSizeLg));
+        height: calc(var(--Form-input-lineHeight) * var(--Form-item-fontSize));
       }
     }
 
     .#{$ns}NumberControl {
       .#{$ns}Number {
+        min-width: 0;
+        min-height: 0;
         flex: 1;
         border: none;
 
@@ -666,7 +741,6 @@
     .#{$ns}Form-control {
       flex: 1;
       flex-wrap: wrap;
-      font-size: var(--fontSizeLg);
       min-width: 0;
 
       .#{$ns}ColorPicker {
@@ -679,8 +753,9 @@
         height: 100%;
 
         .#{$ns}ResultBox-value-wrap {
-          justify-content: flex-end;
-          text-align: right;
+          justify-content: flex-start;
+          text-align: left;
+          flex-wrap: nowrap; // 避免右侧下拉箭头换行
         }
       }
 
@@ -719,6 +794,8 @@
     }
 
     .#{$ns}Form-item-controlBox {
+      min-width: 0;
+      min-height: 0;
       flex: 1;
       max-width: -moz-available;
       max-width: -webkit-fill-available;
@@ -784,6 +861,9 @@
 
     .#{$ns}TextareaControl > textarea,
     .#{$ns}Form-control > .#{$ns}TextControl-input,
+    .#{$ns}Number-input,
+    .#{$ns}ResultBox,
+    .#{$ns}DateControl > .#{$ns}DatePicker,
     .#{$ns}TextControl.is-focused > .#{$ns}TextControl-input {
       border: none;
       padding: 0 var(--Form-input-paddingX) 0 0;
@@ -843,6 +923,42 @@
   .#{$ns}Form-groupColumn:nth-last-of-type(1) {
     &::after {
       display: none;
+    }
+  }
+  .#{$ns}Form-flexInner {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+
+    > .#{$ns}Form-label {
+      display: inline-block;
+      vertical-align: top;
+      padding-top: var(--Form-label-paddingTop);
+      padding-right: var(--Form-row-gutterWidth);
+      flex: 1;
+      min-width: 0;
+      padding-top: 0;
+    }
+
+    > .#{$ns}Form-control {
+      flex: 1;
+    }
+  }
+
+  .#{$ns}Form-flexInner--label-top {
+    flex-direction: column;
+    > .#{$ns}Form-label {
+      margin-bottom: px2rem(10px);
+    }
+  }
+  .#{$ns}Form-flexInner--label-left {
+    > .#{$ns}Form-label {
+      text-align: left;
+    }
+  }
+  .#{$ns}Form-flexInner--label-right {
+    > .#{$ns}Form-label {
+      text-align: right;
     }
   }
 }

@@ -34,11 +34,20 @@ import type {EditorNodeType, EditorNodeSnapshot} from './store/node';
 import {ContainerWrapper} from './component/ContainerWrapper';
 import type {EditorStoreType} from './store/editor';
 import {AvailableRenderersPlugin} from './plugin/AvailableRenderers';
+import {BasicToolbarPlugin} from './plugin/BasicToolbar';
+import {CodePlugin} from './plugin/Code';
+import {ErrorRendererPlugin} from './plugin/ErrorRenderer';
+import {OutlinePlugin} from './plugin/Outline';
+import {UnknownRendererPlugin} from './plugin/Unknown';
 import ShortcutKey from './component/base/ShortcutKey';
 import WidthDraggableContainer from './component/base/WidthDraggableContainer';
 import {SchemaFrom} from './component/base/SchemaForm';
 
 export const version = '__buildVersion';
+(window as any).amisEditorVersionInfo = {
+  version: '__buildVersion',
+  buildTime: '__buildTime'
+};
 
 export default Editor;
 
@@ -59,6 +68,11 @@ export {
   EditorStoreType,
   ContainerWrapper,
   AvailableRenderersPlugin,
+  BasicToolbarPlugin,
+  CodePlugin,
+  ErrorRendererPlugin,
+  OutlinePlugin,
+  UnknownRendererPlugin,
   ShortcutKey,
   SchemaFrom,
   WidthDraggableContainer

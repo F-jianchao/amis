@@ -8,6 +8,7 @@ exports[`1. Renderer:Picker base 1`] = `
   <div>
     <div
       class="cxd-Form-item cxd-Form-item--normal"
+      data-amis-name="picker"
       data-role="form-item"
     >
       <label
@@ -30,7 +31,7 @@ exports[`1. Renderer:Picker base 1`] = `
           class="cxd-Picker cxd-Picker--single is-focused"
         >
           <div
-            class="cxd-Picker-input"
+            class="cxd-Picker-input is-focused"
           >
             <div
               class="cxd-Picker-placeholder"
@@ -225,6 +226,7 @@ exports[`1. Renderer:Picker base 2`] = `
 <div>
   <div
     class="cxd-Form-item cxd-Form-item--normal"
+    data-amis-name="picker"
     data-role="form-item"
   >
     <label
@@ -247,7 +249,7 @@ exports[`1. Renderer:Picker base 2`] = `
         class="cxd-Picker cxd-Picker--single is-focused"
       >
         <div
-          class="cxd-Picker-input"
+          class="cxd-Picker-input is-focused"
         >
           <div
             class="cxd-Picker-valueWrap"

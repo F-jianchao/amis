@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  CustomStyle,
   RENDERER_TRANSMISSION_OMIT_PROPS,
   Renderer,
   RendererProps
@@ -13,6 +14,7 @@ import {
 import {ActionSchema} from './Action';
 import {FormHorizontal} from 'amis-core';
 import omit from 'lodash/omit';
+import {Icon} from 'amis-ui';
 
 /**
  * Panel渲染器。
@@ -79,6 +81,11 @@ export interface PanelSchema extends BaseSchema {
    */
   affixFooter?: boolean | 'always';
 
+  /**\
+   * 可折叠。先简单实现一下
+   */
+  collapsible?: boolean;
+
   /**
    * 配置子表单项默认的展示方式。
    */
@@ -87,6 +94,13 @@ export interface PanelSchema extends BaseSchema {
    * 如果是水平排版，这个属性可以细化水平排版的左右宽度占比。
    */
   subFormHorizontal?: FormHorizontal;
+
+  /**
+   * 外观配置的classname
+   */
+  headerControlClassName: string;
+  bodyControlClassName: string;
+  actionsControlClassName: string;
 }
 
 export interface PanelProps
@@ -114,6 +128,15 @@ export default class Panel extends React.Component<PanelProps> {
     // actionsClassName: 'Panel-footer',
     // bodyClassName: 'Panel-body'
   };
+
+  state = {
+    collapsed: false
+  };
+
+  constructor(props: PanelProps) {
+    super(props);
+    props.mobileUI && props.collapsible && (this.state.collapsed = true);
+  }
 
   renderBody(): JSX.Element | null {
     const {
@@ -186,6 +209,10 @@ export default class Panel extends React.Component<PanelProps> {
       actionsClassName,
       footerClassName,
       footerWrapClassName,
+      headerControlClassName,
+      headerTitleControlClassName,
+      bodyControlClassName,
+      actionsControlClassName,
       children,
       title,
       footer,
@@ -193,6 +220,7 @@ export default class Panel extends React.Component<PanelProps> {
       classPrefix: ns,
       classnames: cx,
       id,
+      collapsible,
       ...rest
     } = this.props;
 
@@ -202,23 +230,37 @@ export default class Panel extends React.Component<PanelProps> {
     };
 
     const footerDoms = [];
-    const actions = this.renderActions();
-    actions &&
-      footerDoms.push(
-        <div
-          key="actions"
-          className={cx(`Panel-btnToolbar`, actionsClassName || `Panel-footer`)}
-        >
-          {actions}
-        </div>
-      );
+    const collapsed = this.state.collapsed;
 
-    footer &&
-      footerDoms.push(
-        <div key="footer" className={cx(footerClassName || `Panel-footer`)}>
-          {render('footer', footer, subProps)}
-        </div>
-      );
+    if (!collapsed) {
+      const actions = this.renderActions();
+      actions &&
+        footerDoms.push(
+          <div
+            key="actions"
+            className={cx(
+              `Panel-btnToolbar`,
+              actionsClassName || `Panel-footer`,
+              actionsControlClassName
+            )}
+          >
+            {actions}
+          </div>
+        );
+
+      footer &&
+        footerDoms.push(
+          <div
+            key="footer"
+            className={cx(
+              footerClassName || `Panel-footer`,
+              actionsControlClassName
+            )}
+          >
+            {render('footer', footer, subProps)}
+          </div>
+        );
+    }
 
     let footerDom = footerDoms.length ? (
       <div
@@ -233,22 +275,60 @@ export default class Panel extends React.Component<PanelProps> {
     ) : null;
 
     return (
-      <div className={cx(`Panel`, className || `Panel--default`)} style={style}>
+      <div
+        data-id={id}
+        className={cx(`Panel`, className || `Panel--default`)}
+        style={style}
+      >
         {header ? (
-          <div className={cx(headerClassName || `Panel-heading`)}>
+          <div
+            className={cx(
+              headerClassName || `Panel-heading`,
+              headerControlClassName
+            )}
+          >
             {render('header', header, subProps)}
           </div>
         ) : title ? (
-          <div className={cx(headerClassName || `Panel-heading`)}>
-            <h3 className={cx(`Panel-title`)}>
+          <div
+            className={cx(
+              headerClassName || `Panel-heading`,
+              headerControlClassName,
+              {
+                'is-collapsible': collapsible
+              }
+            )}
+          >
+            <h3 className={cx(`Panel-title`, headerTitleControlClassName)}>
               {render('title', title, subProps)}
             </h3>
+            {collapsible ? (
+              <span
+                className={cx('Panel-arrow-wrap')}
+                onClick={() => {
+                  this.setState({
+                    collapsed: !collapsed
+                  });
+                }}
+              >
+                <Icon
+                  icon="down-arrow-bold"
+                  className={cx('Panel-arrow', 'icon', {
+                    'is-collapsed': collapsed
+                  })}
+                />
+              </span>
+            ) : null}
           </div>
         ) : null}
 
-        <div className={bodyClassName || `${ns}Panel-body`}>
-          {this.renderBody()}
-        </div>
+        {!collapsed ? (
+          <div
+            className={cx(bodyClassName || `Panel-body`, bodyControlClassName)}
+          >
+            {this.renderBody()}
+          </div>
+        ) : null}
 
         {footerDom}
       </div>

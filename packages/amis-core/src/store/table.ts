@@ -44,7 +44,8 @@ function initChildren(
   depth: number,
   pindex: number,
   parentId: string,
-  path: string = ''
+  path: string = '',
+  getEntryId?: (entry: any, index: number) => string
 ): any {
   depth += 1;
   return children.map((item, index) => {
@@ -53,7 +54,9 @@ function initChildren(
       : {
           item
         };
-    const id = item.__id ?? guid();
+    const id = String(
+      getEntryId ? getEntryId(item, index) : item.__id ?? guid()
+    );
 
     return {
       // id: String(item && (item as any)[self.primaryField] || `${pindex}-${depth}-${key}`),
@@ -72,7 +75,14 @@ function initChildren(
       rowSpans: {},
       children:
         item && Array.isArray(item.children)
-          ? initChildren(item.children, depth, index, id, `${path}${index}.`)
+          ? initChildren(
+              item.children,
+              depth,
+              index,
+              id,
+              `${path}${index}.`,
+              getEntryId
+            )
           : []
     };
   });
@@ -120,6 +130,10 @@ export const Column = types
           (column: any) => !column.type.startsWith('__')
         )?.id === self.id
       );
+    },
+
+    get columnKey() {
+      return self.pristine.uid || self.name || self.label || self.rawIndex;
     }
   }))
   .actions(self => ({
@@ -138,11 +152,13 @@ export const Column = types
       self.toggled = value;
     },
 
-    setEnableSearch(value: boolean) {
+    setEnableSearch(value: boolean, skipSave = false) {
       self.enableSearch = value;
 
-      const table = getParent(self, 2) as ITableStore;
-      table.persistSaveToggledColumns();
+      if (!skipSave) {
+        const table = getParent(self, 2) as ITableStore;
+        table.persistSaveToggledColumns();
+      }
     },
 
     setMinWidth(value: number) {
@@ -252,14 +268,13 @@ export const Row = types
     },
 
     getDataWithModifiedChilden() {
-      let data = {
-        ...self.data
-      };
+      let data = self.data;
 
       if (data.children && self.children) {
-        data.children = self.children.map(item =>
-          item.getDataWithModifiedChilden()
-        );
+        data = {
+          ...data,
+          children: self.children.map(item => item.getDataWithModifiedChilden())
+        };
       }
 
       return data;
@@ -387,6 +402,13 @@ export const Row = types
       );
     },
 
+    setExpanded(expanded: boolean) {
+      (getParent(self, self.depth * 2) as ITableStore).setExpanded(
+        self as IRow,
+        expanded
+      );
+    },
+
     change(values: object, savePristine?: boolean) {
       self.data = immutableExtends(self.data, values);
       savePristine && (self.pristine = self.data);
@@ -487,7 +509,6 @@ export const TableStore = iRendererStore
   .named('TableStore')
   .props({
     columns: types.array(Column),
-    columnsKey: '',
     rows: types.array(Row),
     selectedRows: types.array(types.reference(Row)),
     expandedRows: types.array(types.string),
@@ -788,6 +809,11 @@ export const TableStore = iRendererStore
 
     return {
       getSelectionUpperLimit,
+
+      get columnsKey() {
+        return location.pathname + self.path;
+      },
+
       get columnsData() {
         return getColumnsExceptBuiltinTypes();
       },
@@ -945,7 +971,7 @@ export const TableStore = iRendererStore
         return getFilteredColumns().every(column => column.realWidth);
       },
 
-      getStickyStyles(column: IColumn, columns: Array<IColumn>) {
+      getStickyStyles(column: IColumn, columns: Array<IColumn>, colSpan = 1) {
         let stickyClassName = '';
         const style: any = {};
         const autoFixLeftColumns = ['__checkme', '__dragme', '__expandme'];
@@ -959,7 +985,7 @@ export const TableStore = iRendererStore
 
           if (
             columns
-              .slice(index + 2)
+              .slice(index + (colSpan - 1) + 2)
               .every(
                 col =>
                   !(
@@ -1106,7 +1132,6 @@ export const TableStore = iRendererStore
         (self.tableLayout = config.tableLayout);
 
       if (config.columns && Array.isArray(config.columns)) {
-        self.columnsKey = getPersistDataKey(config.columns);
         let columns: Array<SColumn> = config.columns
           .map(column => {
             if (
@@ -1137,9 +1162,12 @@ export const TableStore = iRendererStore
           const order = tableMetaData?.columnOrder;
 
           if (Array.isArray(order) && order.length != 0) {
-            columns = sortBy(columns, (item, index) =>
-              order.indexOf(item.name || item.label || index)
-            );
+            columns = sortBy(columns, (item, index) => {
+              const columnKey =
+                (item as any).uid || item.name || item.label || index;
+              const idx = order.indexOf(columnKey);
+              return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+            });
           }
         }
 
@@ -1416,7 +1444,7 @@ export const TableStore = iRendererStore
     function initRows(
       rows: Array<any>,
       getEntryId?: (entry: any, index: number) => string,
-      reUseRow?: boolean
+      reUseRow?: boolean | 'match'
     ) {
       self.selectedRows.clear();
       // self.expandedRows.clear();
@@ -1450,7 +1478,14 @@ export const TableStore = iRendererStore
           loading: false,
           children:
             item && Array.isArray(item.children)
-              ? initChildren(item.children, 1, index, id, `${index}.`)
+              ? initChildren(
+                  item.children,
+                  1,
+                  index,
+                  id,
+                  `${index}.`,
+                  getEntryId
+                )
               : []
         };
       });
@@ -1464,39 +1499,41 @@ export const TableStore = iRendererStore
         );
       }
 
-      replaceRow(arr, reUseRow);
+      let allMatched = replaceRow(arr, reUseRow);
       self.isNested = self.rows.some(
         item => item.children.length || (item.defer && !item.loaded)
       );
 
-      // 前 20 个直接渲染，后面的按需渲染
-      if (
-        self.lazyRenderAfter &&
-        self.falttenedRows.length > self.lazyRenderAfter
-      ) {
-        for (
-          let i = self.lazyRenderAfter, len = self.falttenedRows.length;
-          i < len;
-          i++
+      if (!allMatched) {
+        // 前 20 个直接渲染，后面的按需渲染
+        if (
+          self.lazyRenderAfter &&
+          self.falttenedRows.length > self.lazyRenderAfter
         ) {
-          self.falttenedRows[i].appeared = false;
-          self.falttenedRows[i].lazyRender = true;
+          for (
+            let i = self.lazyRenderAfter, len = self.falttenedRows.length;
+            i < len;
+            i++
+          ) {
+            self.falttenedRows[i].appeared = false;
+            self.falttenedRows[i].lazyRender = true;
+          }
         }
-      }
 
-      const expand = self.footable && self.footable.expand;
-      if (
-        expand === 'first' ||
-        (self.expandConfig && self.expandConfig.expand === 'first')
-      ) {
-        self.rows.length && self.expandedRows.push(self.rows[0].id);
-      } else if (
-        (expand === 'all' && !self.footable.accordion) ||
-        (self.expandConfig &&
-          self.expandConfig.expand === 'all' &&
-          !self.expandConfig.accordion)
-      ) {
-        self.expandedRows.replace(getExpandAllRows(self.rows));
+        const expand = self.footable && self.footable.expand;
+        if (
+          expand === 'first' ||
+          (self.expandConfig && self.expandConfig.expand === 'first')
+        ) {
+          self.rows.length && self.expandedRows.push(self.rows[0].id);
+        } else if (
+          (expand === 'all' && !self.footable.accordion) ||
+          (self.expandConfig &&
+            self.expandConfig.expand === 'all' &&
+            !self.expandConfig.accordion)
+        ) {
+          self.expandedRows.replace(getExpandAllRows(self.rows));
+        }
       }
 
       self.dragging = false;
@@ -1516,10 +1553,26 @@ export const TableStore = iRendererStore
     }
 
     // 尽可能的复用 row
-    function replaceRow(arr: Array<SRow>, reUseRow?: boolean) {
+    function replaceRow(arr: Array<SRow>, reUseRow?: boolean | 'match'): any {
       if (reUseRow === false) {
         self.rows.replace(arr.map(item => Row.create(item)));
-        return;
+        return false;
+      } else if (reUseRow === 'match') {
+        const rows = self.falttenedRows;
+        let allMatched = true;
+        self.rows.replace(
+          arr.map(item => {
+            const exist = rows.find(row => row.id === item.id);
+            if (exist) {
+              exist.replaceWith(item);
+              return exist;
+            }
+
+            allMatched = false;
+            return Row.create(item);
+          })
+        );
+        return allMatched;
       }
 
       const pool = arr.concat();
@@ -1542,6 +1595,8 @@ export const TableStore = iRendererStore
         }
         index++;
       }
+
+      return false;
     }
 
     function updateSelected(selected: Array<any>, valueField?: string) {
@@ -1767,6 +1822,19 @@ export const TableStore = iRendererStore
       }
     }
 
+    function setExpanded(row: IRow | string, expanded: boolean) {
+      const id = typeof row === 'string' ? row : row.id;
+      const idx = self.expandedRows.indexOf(id);
+
+      if (expanded) {
+        if (!~idx) {
+          self.expandedRows.push(id);
+        }
+      } else {
+        ~idx && self.expandedRows.splice(idx, 1);
+      }
+    }
+
     function collapseAllAtDepth(depth: number) {
       let rows = self.getExpandedRows().filter(item => item.depth !== depth);
       self.expandedRows.replace(rows.map(item => item.id));
@@ -1810,6 +1878,10 @@ export const TableStore = iRendererStore
       self.dragging = !self.dragging;
     }
 
+    function startDragging() {
+      self.dragging = true;
+    }
+
     function stopDragging() {
       self.dragging = false;
     }
@@ -1844,20 +1916,25 @@ export const TableStore = iRendererStore
      */
     function persistSaveToggledColumns() {
       const key = self.columnsKey;
+      const toggledColumns = self.activeToggaleColumns;
+      const activedSearchableColumns = self.activedSearchableColumns;
 
       localStorage.setItem(
         key,
         JSON.stringify({
-          // 可显示列index
-          toggledColumnIndex: self.activeToggaleColumns.map(item => item.index),
+          // 记录隐藏的字段，因为默认不设置是显示的，设置了隐藏才需要记录，这样新出来的字段才会默认显示
+          unToggledColumns: self.columnsData
+            .filter(item => !toggledColumns.includes(item))
+            .map(item => item.columnKey),
           // 列排序，name，label可能不存在
-          columnOrder: self.columnsData.map(
-            item => item.name || item.label || item.rawIndex
-          ),
-          // 已激活的可查询列
-          enabledSearchableColumn: self.activedSearchableColumns.map(
-            item => item.name
-          )
+          columnOrder: self.columnsData.map(item => item.columnKey),
+          // 同理只记录不启用的，因为默认是启用的
+          disabledSearchableColumn: self.columnsData
+            .filter(
+              item =>
+                item.searchable && !activedSearchableColumns.includes(item)
+            )
+            .map(item => item.columnKey)
         })
       );
     }
@@ -1892,17 +1969,6 @@ export const TableStore = iRendererStore
       }
     }
 
-    function getPersistDataKey(columns: any[]) {
-      // 这里的columns使用除了__开头的所有列
-      return (
-        location.pathname +
-        self.path +
-        // 不能 sort 因为原始列的顺序设计器是可能改变的，此时如果缓存了打开会失效
-        // 还是缓存的顺序，不符合用户调整列顺序的预期
-        columns.map((item, index) => item.name || item.label || index).join('-')
-      );
-    }
-
     function setSearchFormExpanded(value: any) {
       self.searchFormExpanded = !!value;
     }
@@ -1928,12 +1994,14 @@ export const TableStore = iRendererStore
       getToggleShiftRows,
       toggleExpandAll,
       toggleExpanded,
+      setExpanded,
       collapseAllAtDepth,
       clear,
       setOrderByInfo,
       changeOrder,
       reset,
       toggleDragging,
+      startDragging,
       stopDragging,
       exchange,
       addForm,
@@ -1954,19 +2022,25 @@ export const TableStore = iRendererStore
 
           if (data) {
             const tableMetaData = JSON.parse(data);
-            const toggledColumns = isObject(tableMetaData)
-              ? tableMetaData?.toggledColumnIndex
-              : tableMetaData; // 兼容之前的类型
+            const unToggledColumns = Array.isArray(
+              tableMetaData.unToggledColumns
+            )
+              ? tableMetaData.unToggledColumns
+              : [];
+            const disabledSearchableColumn = Array.isArray(
+              tableMetaData.disabledSearchableColumn
+            )
+              ? tableMetaData.disabledSearchableColumn
+              : [];
 
             self.toggableColumns.forEach(item =>
-              item.setToggled(!!~toggledColumns.indexOf(item.index))
+              item.setToggled(!unToggledColumns.includes(item.columnKey))
             );
 
             self.searchableColumns.forEach(item => {
               item.setEnableSearch(
-                !!~(tableMetaData?.enabledSearchableColumn ?? []).indexOf(
-                  item.name
-                )
+                !disabledSearchableColumn.includes(item.columnKey),
+                true
               );
             });
           }

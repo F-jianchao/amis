@@ -216,27 +216,32 @@ export type ClassName =
       [propName: string]: boolean | undefined | null | string;
     };
 
+export type RequestAdaptor = (
+  api: ApiObject,
+  context: any
+) => ApiObject | Promise<ApiObject>;
+
+export type ResponseAdaptor = (
+  payload: object,
+  response: fetcherResult,
+  api: ApiObject,
+  context: any
+) => any;
+
 export interface ApiObject extends BaseApiObject {
   config?: {
     withCredentials?: boolean;
     cancelExecutor?: (cancel: Function) => void;
   };
+  originUrl?: string; // 原始的 url 地址，记录将 data 拼接到 query 之前的地址
   jsonql?: any;
   graphql?: string;
   operationName?: string;
   body?: PlainObject;
   query?: PlainObject;
   mockResponse?: PlainObject;
-  adaptor?: (
-    payload: object,
-    response: fetcherResult,
-    api: ApiObject,
-    context: any
-  ) => any;
-  requestAdaptor?: (
-    api: ApiObject,
-    context: any
-  ) => ApiObject | Promise<ApiObject>;
+  adaptor?: ResponseAdaptor;
+  requestAdaptor?: RequestAdaptor;
   /**
    * api 发送上下文，可以用来传递一些数据给 api 的 adaptor
    * @readonly
@@ -353,10 +358,17 @@ export interface ActionObject extends ButtonObject {
     | 'expand'
     | 'collapse'
     | 'step-submit'
+    | 'select'
     | 'selectAll'
+    | 'clearAll'
     | 'changeTabKey'
     | 'clearSearch'
-    | 'submitQuickEdit';
+    | 'submitQuickEdit'
+    | 'initDrag'
+    | 'cancelDrag'
+    | 'toggleExpanded'
+    | 'setExpanded';
+
   api?: BaseApiObject | string;
   asyncApi?: BaseApiObject | string;
   payload?: any;
@@ -393,9 +405,38 @@ export interface PlainObject {
   [propsName: string]: any;
 }
 
+export interface DataChangeReason {
+  type:
+    | 'input' // 用户输入
+    | 'api' // api 接口返回触发
+    | 'formula' // 公式计算触发
+    | 'hide' // 隐藏属性变化触发
+    | 'init' // 表单项初始化触发
+    | 'action'; // 事件动作触发
+
+  // 变化的字段名
+  // 如果是整体变化，那么是 undefined
+  name?: string;
+
+  // 变化的值
+  value?: any;
+}
+
 export interface RendererData {
   [propsName: string]: any;
+  /**
+   * 记录变化前的数据
+   */
   __prev?: RendererDataAlias;
+
+  /**
+   * 记录变化的信息
+   */
+  __changeReason?: DataChangeReason;
+
+  /**
+   * 记录上层数据
+   */
   __super?: RendererData;
 }
 type RendererDataAlias = RendererData;
@@ -409,6 +450,7 @@ export type FunctionPropertyNames<T> = {
 export type JSONSchema = JSONSchema7 & {
   group?: string; // 分组
   typeLabel?: string; // 类型说明
+  rawType?: string; // 类型
 };
 
 // export type Omit<T, K extends keyof T & any> = Pick<T, Exclude<keyof T, K>>;

@@ -12,7 +12,13 @@ import {SimpleMap} from '../utils/SimpleMap';
 import {StoreNode} from './node';
 import {IScopedContext} from '../Scoped';
 import {IRootStore} from './root';
-import {concatData, createObjectFromChain, extractObjectChain} from '../utils';
+import {
+  concatData,
+  createObjectFromChain,
+  extractObjectChain,
+  injectObjectChain
+} from '../utils';
+import {DataChangeReason} from '../types';
 
 export const iRendererStore = StoreNode.named('iRendererStore')
   .props({
@@ -20,7 +26,9 @@ export const iRendererStore = StoreNode.named('iRendererStore')
     data: types.optional(types.frozen(), {}),
     initedAt: 0, // 初始 init 的时刻
     updatedAt: 0, // 从服务端更新时刻
-    pristine: types.optional(types.frozen(), {}),
+    pristine: types.optional(types.frozen(), {}), // pristine 的数据可能会被表单项的默认值，form 的 initApi 等修改
+    pristineRaw: types.optional(types.frozen(), {}), // pristine的原始值
+    upStreamData: types.optional(types.frozen(), {}), // 最原始的数据，只有由上游同步下来时才更新。用来判断是否变化过
     action: types.optional(types.frozen(), undefined),
     dialogOpen: false,
     dialogData: types.optional(types.frozen(), undefined),
@@ -34,10 +42,22 @@ export const iRendererStore = StoreNode.named('iRendererStore')
 
     getPristineValueByName(name: string) {
       return getVariable(self.pristine, name, false);
+    },
+
+    get pristineDiff() {
+      const data: any = {};
+      Object.keys(self.pristine).forEach(key => {
+        if (self.pristine[key] !== self.pristineRaw[key]) {
+          data[key] = self.pristine[key];
+        }
+      });
+      return data;
     }
   }))
   .actions(self => {
-    const dialogCallbacks = new SimpleMap<(result?: any) => void>();
+    const dialogCallbacks = new SimpleMap<
+      (confirmed?: any, value?: any) => void
+    >();
     let dialogScoped: IScopedContext | null = null;
     let drawerScoped: IScopedContext | null = null;
     let top: IRootStore | null = null;
@@ -47,11 +67,33 @@ export const iRendererStore = StoreNode.named('iRendererStore')
         top = value;
       },
 
-      initData(data: object = {}, skipSetPristine = false) {
+      initData(
+        data: object = {},
+        skipSetPristine = false,
+        changeReason?: DataChangeReason
+      ) {
         self.initedAt = Date.now();
 
-        !skipSetPristine && (self.pristine = data);
+        if (self.data.__tag) {
+          data = injectObjectChain(data, self.data.__tag);
+        }
+
+        if (!skipSetPristine) {
+          self.pristine = data;
+          self.pristineRaw = data;
+        }
+
+        changeReason &&
+          Object.isExtensible(data) &&
+          Object.defineProperty(data, '__changeReason', {
+            value: changeReason,
+            enumerable: false,
+            configurable: false,
+            writable: false
+          });
+
         self.data = data;
+        self.upStreamData = data;
       },
 
       reset() {
@@ -62,7 +104,8 @@ export const iRendererStore = StoreNode.named('iRendererStore')
         data: object = {},
         tag?: object,
         replace?: boolean,
-        concatFields?: string | string[]
+        concatFields?: string | string[],
+        changeReason?: DataChangeReason
       ) {
         if (concatFields) {
           data = concatData(data, self.data, concatFields);
@@ -71,7 +114,10 @@ export const iRendererStore = StoreNode.named('iRendererStore')
         const prev = self.data;
         let newData;
         if (tag) {
-          let proto = createObject((self.data as any).__super || null, tag);
+          let proto = createObject((self.data as any).__super || null, {
+            ...tag,
+            __tag: tag
+          });
           newData = createObject(proto, {
             ...(replace ? {} : self.data),
             ...data
@@ -87,6 +133,15 @@ export const iRendererStore = StoreNode.named('iRendererStore')
           writable: false
         });
 
+        changeReason &&
+          Object.isExtensible(newData) &&
+          Object.defineProperty(newData, '__changeReason', {
+            value: changeReason,
+            enumerable: false,
+            configurable: false,
+            writable: false
+          });
+
         self.data = newData;
       },
 
@@ -95,7 +150,8 @@ export const iRendererStore = StoreNode.named('iRendererStore')
         value: any,
         changePristine?: boolean,
         force?: boolean,
-        otherModifier?: (data: Object) => void
+        otherModifier?: (data: Object) => void,
+        changeReason?: DataChangeReason
       ) {
         if (!name) {
           return;
@@ -152,6 +208,15 @@ export const iRendererStore = StoreNode.named('iRendererStore')
           });
         }
 
+        changeReason &&
+          Object.isExtensible(data) &&
+          Object.defineProperty(data, '__changeReason', {
+            value: changeReason,
+            enumerable: false,
+            configurable: false,
+            writable: false
+          });
+
         self.data = data;
       },
 
@@ -178,7 +243,7 @@ export const iRendererStore = StoreNode.named('iRendererStore')
       openDialog(
         ctx: any,
         additonal?: object,
-        callback?: (ret: any) => void,
+        callback?: (confirmed: boolean, values: any) => void,
         scoped?: IScopedContext
       ) {
         const chain = extractObjectChain(ctx);
@@ -211,7 +276,7 @@ export const iRendererStore = StoreNode.named('iRendererStore')
         dialogScoped = scoped || null;
       },
 
-      closeDialog(result?: any) {
+      closeDialog(confirmed?: any, data?: any) {
         const callback = dialogCallbacks.get(self.dialogData);
 
         self.dialogOpen = false;
@@ -219,14 +284,14 @@ export const iRendererStore = StoreNode.named('iRendererStore')
 
         if (callback) {
           dialogCallbacks.delete(self.dialogData);
-          setTimeout(() => callback(result), 200);
+          setTimeout(() => callback(confirmed, data), 200);
         }
       },
 
       openDrawer(
         ctx: any,
         additonal?: object,
-        callback?: (ret: any) => void,
+        callback?: (confirmed: boolean, ret: any) => void,
         scoped?: IScopedContext
       ) {
         const chain = extractObjectChain(ctx);
@@ -264,14 +329,14 @@ export const iRendererStore = StoreNode.named('iRendererStore')
         drawerScoped = scoped || null;
       },
 
-      closeDrawer(result?: any) {
+      closeDrawer(confirmed?: any, data?: any) {
         const callback = dialogCallbacks.get(self.drawerData);
         self.drawerOpen = false;
         drawerScoped = null;
 
         if (callback) {
           dialogCallbacks.delete(self.drawerData);
-          setTimeout(() => callback(result), 200);
+          setTimeout(() => callback(confirmed, data), 200);
         }
       },
 

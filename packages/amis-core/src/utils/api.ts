@@ -1,5 +1,13 @@
 import omit from 'lodash/omit';
-import {Api, ApiObject, EventTrack, fetcherResult, Payload} from '../types';
+import {
+  Api,
+  ApiObject,
+  EventTrack,
+  fetcherResult,
+  Payload,
+  RequestAdaptor,
+  ResponseAdaptor
+} from '../types';
 import {FetcherConfig} from '../factory';
 import {tokenize, dataMapping, escapeHtml} from './tpl-builtin';
 import {evalExpression} from './tpl';
@@ -21,6 +29,8 @@ import isPlainObject from 'lodash/isPlainObject';
 import {debug, warning} from './debug';
 import {evaluate} from 'amis-formula';
 import {memoryParse} from './memoryParse';
+import cloneDeep from 'lodash/cloneDeep';
+import isEqual from 'lodash/isEqual';
 
 const rSchema =
   /(?:^|raw\:)(get|post|put|delete|patch|options|head|jsonp|js):/i;
@@ -31,6 +41,44 @@ interface ApiCacheConfig extends ApiObject {
 }
 
 const apiCaches: Array<ApiCacheConfig> = [];
+const requestAdaptors: Array<RequestAdaptor> = [];
+const responseAdaptors: Array<ResponseAdaptor> = [];
+
+/**
+ * 添加全局发送适配器
+ * @param adaptor
+ */
+export function addApiRequestAdaptor(adaptor: RequestAdaptor) {
+  requestAdaptors.push(adaptor);
+  return () => removeApiRequestAdaptor(adaptor);
+}
+
+/**
+ * 删除全局发送适配器
+ * @param adaptor
+ */
+export function removeApiRequestAdaptor(adaptor: RequestAdaptor) {
+  const idx = requestAdaptors.findIndex(i => i === adaptor);
+  ~idx && requestAdaptors.splice(idx, 1);
+}
+
+/**
+ * 添加全局响应适配器
+ * @param adaptor
+ */
+export function addApiResponseAdator(adaptor: ResponseAdaptor) {
+  responseAdaptors.push(adaptor);
+  return () => removeApiResponseAdaptor(adaptor);
+}
+
+/**
+ * 删除全局响应适配器
+ * @param adaptor
+ */
+export function removeApiResponseAdaptor(adaptor: ResponseAdaptor) {
+  const idx = responseAdaptors.findIndex(i => i === adaptor);
+  ~idx && responseAdaptors.splice(idx, 1);
+}
 
 const isIE = !!(document as any).documentMode;
 
@@ -144,7 +192,12 @@ export function buildApi(
       (api as ApiObject)?.filterEmptyQuery
         ? {
             filter: (key: string, value: any) => {
-              return value === '' ? undefined : value;
+              return value === ''
+                ? undefined
+                : // qs源码中有filter后，不会默认使用serializeDate处理date类型
+                value instanceof Date
+                ? Date.prototype.toISOString.call(value)
+                : value;
             }
           }
         : undefined
@@ -155,6 +208,7 @@ export function buildApi(
     ctx: Record<string, any>,
     merge: boolean
   ) => {
+    apiObject.originUrl = apiObject.originUrl || apiObject.url;
     const idx = apiObject.url.indexOf('?');
     if (~idx) {
       const params = (apiObject.query = {
@@ -480,10 +534,40 @@ export function wrapFetcher(
     api = buildApi(api, data, options) as ApiObject;
     (api as ApiObject).context = data;
 
+    const adaptors = requestAdaptors.concat();
     if (api.requestAdaptor) {
-      debug('api', 'before requestAdaptor', api);
-      api = (await api.requestAdaptor(api, data)) || api;
-      debug('api', 'after requestAdaptor', api);
+      const adaptor = api.requestAdaptor;
+      adaptors.unshift(async (api: ApiObject, context) => {
+        const originQuery = api.query;
+        const originQueryCopy = isPlainObject(api.query)
+          ? cloneDeep(api.query)
+          : api.query;
+
+        debug('api', 'before requestAdaptor', api);
+        api = (await adaptor.call(api, api, context)) || api;
+
+        if (
+          api.query !== originQuery ||
+          (isPlainObject(api.query) && !isEqual(api.query, originQueryCopy))
+        ) {
+          // 如果 api.data 有变化，且是 get 请求，那么需要重新构建 url
+          const idx = api.url.indexOf('?');
+          api.url = `${
+            ~idx ? api.url.substring(0, idx) : api.url
+          }?${qsstringify(api.query)}`;
+        }
+        debug('api', 'after requestAdaptor', api);
+        return api;
+      });
+    }
+
+    // 执行所有的发送适配器
+    if (adaptors.length) {
+      api = await adaptors.reduce(async (api, fn) => {
+        let ret: any = await api;
+        ret = (await fn(ret, data)) || ret;
+        return ret as ApiObject;
+      }, Promise.resolve(api));
     }
 
     if (
@@ -517,6 +601,19 @@ export function wrapFetcher(
     // 如果发送适配器中设置了 mockResponse
     // 则直接跳过请求发送
     if (api.mockResponse) {
+      console.debug(
+        `fetch api ${api.url}${
+          api.data
+            ? `?${
+                typeof api.data === 'string'
+                  ? api.data
+                  : qsstringify(api.data, api.qsOptions)
+              }`
+            : ''
+        } with mock response`,
+        api.mockResponse,
+        api
+      );
       return wrapAdaptor(Promise.resolve(api.mockResponse) as any, api, data);
     }
 
@@ -566,31 +663,50 @@ export function wrapFetcher(
   return wrappedFetcher;
 }
 
-export function wrapAdaptor(
+export async function wrapAdaptor(
   promise: Promise<fetcherResult>,
   api: ApiObject,
   context: any
 ) {
-  const adaptor = api.adaptor;
-  return adaptor
-    ? promise
-        .then(async response => {
-          debug('api', 'before adaptor data', (response as any).data);
-          let result = adaptor((response as any).data, response, api, context);
+  const adaptors = responseAdaptors.concat();
+  if (api.adaptor) {
+    const adaptor = api.adaptor;
+    adaptors.push(
+      async (
+        payload: object,
+        response: fetcherResult,
+        api: ApiObject,
+        context: any
+      ) => {
+        debug('api', 'before adaptor data', (response as any).data);
+        let result = adaptor((response as any).data, response, api, context);
 
-          if (result?.then) {
-            result = await result;
-          }
+        if (result?.then) {
+          result = await result;
+        }
 
-          debug('api', 'after adaptor data', result);
+        debug('api', 'after adaptor data', result);
+        return result;
+      }
+    );
+  }
 
-          return {
-            ...response,
-            data: result
-          };
-        })
-        .then(ret => responseAdaptor(ret, api))
-    : promise.then(ret => responseAdaptor(ret, api));
+  const response = await adaptors.reduce(async (promise, adaptor) => {
+    let response: any = await promise;
+    let result =
+      adaptor(response.data, response, api, context) ?? response.data;
+
+    if (result?.then) {
+      result = await result;
+    }
+
+    return {
+      ...response,
+      data: result
+    } as fetcherResult;
+  }, promise);
+
+  return responseAdaptor(response, api);
 }
 
 /**
@@ -719,7 +835,7 @@ export function isApiOutdated(
   }
 
   // 通常是编辑器里加了属性，一开始没值，后来有了
-  if (prevApi === undefined && !nextApi !== undefined) {
+  if (prevApi === undefined) {
     return true;
   }
 

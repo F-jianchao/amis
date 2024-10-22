@@ -1,5 +1,5 @@
 import {RendererEvent} from '../utils/renderer-event';
-import {createObject} from '../utils/helper';
+import {createObject, extendObject} from '../utils/helper';
 import {
   RendererAction,
   ListenerAction,
@@ -59,8 +59,7 @@ export class CmptAction implements RendererAction {
       : renderer;
     // 如果key指定了，但是没找到组件，则报错
     if (key && !component) {
-      const msg =
-        '尝试执行一个不存在的目标组件动作，请检查目标组件非隐藏状态，且正确指定了componentId或componentName';
+      const msg = `尝试执行一个不存在的目标组件动作（${key}），请检查目标组件非隐藏状态，且正确指定了componentId或componentName`;
       if (action.ignoreError === false) {
         throw Error(msg);
       } else {
@@ -83,14 +82,24 @@ export class CmptAction implements RendererAction {
 
     // 刷新
     if (action.actionType === 'reload') {
-      return component?.reload?.(
+      const result = await component?.reload?.(
         undefined,
         action.data,
-        undefined,
+        event.data,
         undefined,
         dataMergeMode === 'override',
         action.args
       );
+
+      if (result && action.outputVar) {
+        event.setData(
+          extendObject(event.data, {
+            [action.outputVar]: result
+          })
+        );
+      }
+
+      return result;
     }
 
     // 校验表单项
@@ -100,7 +109,9 @@ export class CmptAction implements RendererAction {
     ) {
       const {dispatchEvent, data} = component?.props || {};
       try {
-        const valid = await component?.props.onValidate?.();
+        const valid =
+          (await component?.props.onValidate?.()) ||
+          (await component?.validate?.());
         if (valid) {
           event.setData(
             createObject(event.data, {
@@ -138,7 +149,12 @@ export class CmptAction implements RendererAction {
 
     // 执行组件动作
     try {
-      const result = await component?.doAction?.(action, action.args, true);
+      const result = await component?.doAction?.(
+        action,
+        event.data,
+        true,
+        action.args
+      );
 
       if (['validate', 'submit'].includes(action.actionType)) {
         event.setData(

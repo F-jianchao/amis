@@ -19,6 +19,7 @@ import {RightPanels} from './Panel/RightPanels';
 import type {SchemaObject} from 'amis';
 import type {VariableGroup, VariableOptions} from '../variable';
 import type {EditorNodeType} from '../store/node';
+import {MobileDevTool} from 'amis-ui';
 
 export interface EditorProps extends PluginEventListener {
   value: SchemaObject;
@@ -31,6 +32,10 @@ export interface EditorProps extends PluginEventListener {
   $schemaUrl?: string;
   schemas?: Array<any>;
   theme?: string;
+  /** 工具栏模式 */
+  toolbarMode?: 'default' | 'mini';
+  /** 是否需要弹框 */
+  noDialog?: boolean;
   /** 应用语言类型 */
   appLocale?: string;
   /** 是否开启多语言 */
@@ -40,6 +45,7 @@ export interface EditorProps extends PluginEventListener {
   superEditorData?: any;
   withSuperDataSchema?: boolean;
   /** 当前 Editor 为 SubEditor 时触发的宿主节点 */
+  hostManager?: EditorManager;
   hostNode?: EditorNodeType;
   dataBindingChange?: (
     value: string,
@@ -130,12 +136,15 @@ export interface EditorProps extends PluginEventListener {
   getHostNodeDataSchema?: () => Promise<any>;
 
   getAvaiableContextFields?: (node: EditorNodeType) => Promise<any>;
+  readonly?: boolean;
 }
 
 export default class Editor extends Component<EditorProps> {
   readonly store: EditorStoreType;
   readonly manager: EditorManager;
   readonly mainRef = React.createRef<HTMLDivElement>();
+  readonly mainPreviewRef = React.createRef<HTMLDivElement>();
+  readonly mainPreviewBodyRef = React.createRef<any>();
   toDispose: Array<Function> = [];
   lastResult: any;
   curCopySchemaData: any; // 用于记录当前复制的元素
@@ -154,6 +163,7 @@ export default class Editor extends Component<EditorProps> {
       onChange,
       showCustomRenderersPanel,
       superEditorData,
+      hostManager,
       ...rest
     } = props;
 
@@ -164,9 +174,10 @@ export default class Editor extends Component<EditorProps> {
       {
         isMobile: props.isMobile,
         theme: props.theme,
+        toolbarMode: props.toolbarMode || 'default',
+        noDialog: props.noDialog,
         isSubEditor,
         amisDocHost: props.amisDocHost,
-        ctx: props.ctx,
         superEditorData,
         appLocale: props.appLocale,
         appCorpusData: props?.amisEnv?.replaceText,
@@ -174,12 +185,13 @@ export default class Editor extends Component<EditorProps> {
       },
       config
     );
+    this.store.setCtx(props.ctx);
     this.store.setSchema(value);
     if (showCustomRenderersPanel !== undefined) {
       this.store.setShowCustomRenderersPanel(showCustomRenderersPanel);
     }
 
-    this.manager = new EditorManager(config, this.store);
+    this.manager = new EditorManager(config, this.store, hostManager);
 
     // 子编辑器不再重新设置 editorStore
     if (!(props.isSubEditor && (window as any).editorStore)) {
@@ -264,6 +276,10 @@ export default class Editor extends Component<EditorProps> {
     // 弹窗模式不处理
     if (this.props.isSubEditor) {
       // e.defaultPrevented // 或者已经阻止不处理
+      return;
+    }
+
+    if (this.props.readonly) {
       return;
     }
 
@@ -418,8 +434,9 @@ export default class Editor extends Component<EditorProps> {
 
   // 右键菜单
   @autobind
-  handleContextMenu(e: React.MouseEvent<HTMLElement>) {
-    closeContextMenus();
+  async handleContextMenu(e: React.MouseEvent<HTMLElement>) {
+    e.persist();
+    await closeContextMenus();
     let targetId: string = '';
     let region = '';
 
@@ -564,7 +581,8 @@ export default class Editor extends Component<EditorProps> {
       previewProps,
       autoFocus,
       isSubEditor,
-      amisEnv
+      amisEnv,
+      readonly
     } = this.props;
 
     return (
@@ -578,8 +596,14 @@ export default class Editor extends Component<EditorProps> {
           className
         )}
       >
-        <div className="ae-Editor-inner" onContextMenu={this.handleContextMenu}>
-          {!preview && (
+        <div
+          className={cx(
+            'ae-Editor-inner',
+            isMobile && 'ae-Editor-inner--mobile'
+          )}
+          onContextMenu={this.handleContextMenu}
+        >
+          {!preview && !readonly && (
             <LeftPanels
               store={this.store}
               manager={this.manager}
@@ -587,9 +611,21 @@ export default class Editor extends Component<EditorProps> {
             />
           )}
 
-          <div className="ae-Main">
+          <div className="ae-Main" ref={this.mainPreviewRef}>
             {!preview && (
-              <Breadcrumb store={this.store} manager={this.manager} />
+              <div className="ae-Header">
+                <Breadcrumb store={this.store} manager={this.manager} />
+                <div
+                  id="aeHeaderRightContainer"
+                  className="ae-Header-Right-Container"
+                ></div>
+              </div>
+            )}
+            {isMobile && (
+              <MobileDevTool
+                container={this.mainPreviewRef.current}
+                previewBody={this.mainPreviewBodyRef.current?.currentDom}
+              />
             )}
             <Preview
               {...previewProps}
@@ -603,6 +639,8 @@ export default class Editor extends Component<EditorProps> {
               amisEnv={amisEnv}
               autoFocus={autoFocus}
               toolbarContainer={this.getToolbarContainer}
+              readonly={readonly}
+              ref={this.mainPreviewBodyRef}
             ></Preview>
           </div>
 
@@ -613,6 +651,7 @@ export default class Editor extends Component<EditorProps> {
               theme={theme}
               appLocale={appLocale}
               amisEnv={amisEnv}
+              readonly={readonly}
             />
           )}
 
@@ -624,6 +663,7 @@ export default class Editor extends Component<EditorProps> {
           manager={this.manager}
           theme={theme}
           amisEnv={amisEnv}
+          readonly={readonly}
         />
         <ScaffoldModal
           store={this.store}

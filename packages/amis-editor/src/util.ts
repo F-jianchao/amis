@@ -358,7 +358,14 @@ export const TREE_BASE_EVENTS = (schema: any) => {
                     title: '选中的项',
                     properties: itemSchema
                   },
-                  items
+                  items,
+                  selectedItems: {
+                    type: 'array',
+                    title: '选中项集合',
+                    items: {
+                      type: 'object'
+                    }
+                  }
                 }
               }
             }
@@ -477,3 +484,9 @@ export function _isModelComp(schema: Record<string, any>): boolean {
 
   return extraEvaluation;
 }
+
+export const getOwnValue = (obj: any, key: string) => {
+  if (obj && obj.hasOwnProperty(key)) {
+    return obj[key];
+  }
+};

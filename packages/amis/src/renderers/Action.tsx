@@ -10,7 +10,8 @@ import {
   RendererProps,
   ScopedContext,
   uuid,
-  setThemeClassName
+  setThemeClassName,
+  RendererEvent
 } from 'amis-core';
 import {filter} from 'amis-core';
 import {BadgeObject, Button, SpinnerExtraProps} from 'amis-ui';
@@ -925,13 +926,17 @@ export type ActionRendererProps = RendererProps &
     onAction: (
       e: React.MouseEvent<any> | string | void | null,
       action: object,
-      data: any
+      data: any,
+      throwErrors?: boolean,
+      delegate?: IScopedContext,
+      rendererEvent?: RendererEvent<any>
     ) => void;
     btnDisabled?: boolean;
   };
 
 @Renderer({
-  type: 'action'
+  type: 'action',
+  alias: ['button', 'submit', 'reset']
 })
 // @ts-ignore 类型没搞定
 @withBadge
@@ -1005,7 +1010,14 @@ export class ActionRenderer extends React.Component<ActionRendererProps> {
         }
 
         // 因为crud里面也会处理二次确认，所以如果按钮处理过了就跳过crud的二次确认
-        onAction(e, {...action, ignoreConfirm: !!hasOnEvent}, mergedData);
+        await onAction(
+          e,
+          {...action, ignoreConfirm: !!hasOnEvent},
+          mergedData,
+          undefined,
+          undefined,
+          rendererEvent
+        );
       } else if (action.countDown) {
         throw new Error('cancel');
       }
@@ -1021,7 +1033,14 @@ export class ActionRenderer extends React.Component<ActionRendererProps> {
         return;
       }
 
-      onAction(e, action, mergedData);
+      await onAction(
+        e,
+        action,
+        mergedData,
+        undefined,
+        undefined,
+        rendererEvent
+      );
     }
   }
 
@@ -1071,18 +1090,3 @@ export class ActionRenderer extends React.Component<ActionRendererProps> {
     );
   }
 }
-
-@Renderer({
-  type: 'button'
-})
-export class ButtonRenderer extends ActionRenderer {}
-
-@Renderer({
-  type: 'submit'
-})
-export class SubmitRenderer extends ActionRenderer {}
-
-@Renderer({
-  type: 'reset'
-})
-export class ResetRenderer extends ActionRenderer {}

@@ -33,6 +33,7 @@ exports[`Renderer:checkboxes 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -49,7 +50,7 @@ exports[`Renderer:checkboxes 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -111,6 +112,7 @@ exports[`Renderer:checkboxes 1`] = `
         </div>
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -183,6 +185,7 @@ exports[`Renderer:checkboxes 2`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -199,7 +202,7 @@ exports[`Renderer:checkboxes 2`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -261,6 +264,7 @@ exports[`Renderer:checkboxes 2`] = `
         </div>
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -329,6 +333,7 @@ exports[`Renderer:checkboxes with checkall: all selected 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -345,7 +350,7 @@ exports[`Renderer:checkboxes with checkall: all selected 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -456,6 +461,7 @@ exports[`Renderer:checkboxes with checkall: all selected 1`] = `
         </div>
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <div
@@ -531,6 +537,7 @@ exports[`Renderer:checkboxes with checkall: default value 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -547,7 +554,7 @@ exports[`Renderer:checkboxes with checkall: default value 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox"
@@ -658,6 +665,7 @@ exports[`Renderer:checkboxes with checkall: default value 1`] = `
         </div>
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <div
@@ -733,6 +741,7 @@ exports[`Renderer:checkboxes with checkall: no selected 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -749,7 +758,7 @@ exports[`Renderer:checkboxes with checkall: no selected 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox"
@@ -860,6 +869,7 @@ exports[`Renderer:checkboxes with checkall: no selected 1`] = `
         </div>
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <div
@@ -935,6 +945,7 @@ exports[`Renderer:checkboxes with columnsCount 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes2"
           data-role="form-item"
         >
           <label
@@ -951,7 +962,7 @@ exports[`Renderer:checkboxes with columnsCount 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control"
+            class="cxd-CheckboxesControl cxd-Form-control is-thin"
           >
             <div
               class="cxd-Grid"
@@ -1090,6 +1101,7 @@ exports[`Renderer:checkboxes with columnsCount 2`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes2"
           data-role="form-item"
         >
           <label
@@ -1106,7 +1118,7 @@ exports[`Renderer:checkboxes with columnsCount 2`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control"
+            class="cxd-CheckboxesControl cxd-Form-control is-thin"
           >
             <div
               class="cxd-Grid"
@@ -1249,6 +1261,7 @@ exports[`Renderer:checkboxes with columnsCount 3`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -1265,7 +1278,7 @@ exports[`Renderer:checkboxes with columnsCount 3`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control"
+            class="cxd-CheckboxesControl cxd-Form-control is-thin"
           >
             <div
               class="cxd-CheckboxesControl-group"
@@ -1471,6 +1484,7 @@ exports[`Renderer:checkboxes with creatable & createBtnLabel & addControls & add
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -1487,7 +1501,7 @@ exports[`Renderer:checkboxes with creatable & createBtnLabel & addControls & add
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -1629,6 +1643,7 @@ exports[`Renderer:checkboxes with creatable & createBtnLabel & addControls & add
           />
           <div
             class="cxd-Form-item cxd-Form-item--normal"
+            data-amis-name="checkboxes"
             data-role="form-item"
           >
             <label
@@ -1645,7 +1660,7 @@ exports[`Renderer:checkboxes with creatable & createBtnLabel & addControls & add
               </span>
             </label>
             <div
-              class="cxd-CheckboxesControl cxd-Form-control is-inline"
+              class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
             >
               <label
                 class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -1777,6 +1792,7 @@ exports[`Renderer:checkboxes with creatable & createBtnLabel & addControls & add
           />
           <div
             class="cxd-Form-item cxd-Form-item--horizontal"
+            data-amis-name="label"
             data-role="form-item"
           >
             <label
@@ -1816,6 +1832,7 @@ exports[`Renderer:checkboxes with creatable & createBtnLabel & addControls & add
           </div>
           <div
             class="cxd-Form-item cxd-Form-item--horizontal"
+            data-amis-name="value"
             data-role="form-item"
           >
             <label
@@ -1944,6 +1961,7 @@ exports[`Renderer:checkboxes with defaultCheckAll & inline 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -1960,7 +1978,7 @@ exports[`Renderer:checkboxes with defaultCheckAll & inline 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -2023,6 +2041,7 @@ exports[`Renderer:checkboxes with defaultCheckAll & inline 1`] = `
         </div>
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes-two"
           data-role="form-item"
         >
           <label
@@ -2039,7 +2058,7 @@ exports[`Renderer:checkboxes with defaultCheckAll & inline 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control"
+            class="cxd-CheckboxesControl cxd-Form-control is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -2158,6 +2177,7 @@ exports[`Renderer:checkboxes with editable & editControls & editApi: dialog open
           />
           <div
             class="cxd-Form-item cxd-Form-item--normal"
+            data-amis-name="checkboxes"
             data-role="form-item"
           >
             <label
@@ -2174,7 +2194,7 @@ exports[`Renderer:checkboxes with editable & editControls & editApi: dialog open
               </span>
             </label>
             <div
-              class="cxd-CheckboxesControl cxd-Form-control is-inline"
+              class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
             >
               <label
                 class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -2333,6 +2353,7 @@ exports[`Renderer:checkboxes with editable & editControls & editApi: dialog open
           />
           <div
             class="cxd-Form-item cxd-Form-item--horizontal"
+            data-amis-name="label"
             data-role="form-item"
           >
             <label
@@ -2372,6 +2393,7 @@ exports[`Renderer:checkboxes with editable & editControls & editApi: dialog open
           </div>
           <div
             class="cxd-Form-item cxd-Form-item--horizontal"
+            data-amis-name="value"
             data-role="form-item"
           >
             <label
@@ -2469,6 +2491,7 @@ exports[`Renderer:checkboxes with editable & editControls & editApi: edit succes
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -2485,7 +2508,7 @@ exports[`Renderer:checkboxes with editable & editControls & editApi: edit succes
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -2636,6 +2659,7 @@ exports[`Renderer:checkboxes with editable & editControls & editApi: hover edit 
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -2652,7 +2676,7 @@ exports[`Renderer:checkboxes with editable & editControls & editApi: hover edit 
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -2803,6 +2827,7 @@ exports[`Renderer:checkboxes with group 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -2819,7 +2844,7 @@ exports[`Renderer:checkboxes with group 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control"
+            class="cxd-CheckboxesControl cxd-Form-control is-thin"
           >
             <div
               class="cxd-CheckboxesControl-group"
@@ -2994,6 +3019,7 @@ exports[`Renderer:checkboxes with menuTpl 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -3010,7 +3036,7 @@ exports[`Renderer:checkboxes with menuTpl 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -3165,6 +3191,7 @@ exports[`Renderer:checkboxes with optionType & labelClassName & itemClassName 1`
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -3181,7 +3208,7 @@ exports[`Renderer:checkboxes with optionType & labelClassName & itemClassName 1`
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox iamitem cxd-Checkbox--full cxd-Checkbox--button"
@@ -3305,6 +3332,7 @@ exports[`Renderer:checkboxes with removable & deleteApi: dialog open 1`] = `
           />
           <div
             class="cxd-Form-item cxd-Form-item--normal"
+            data-amis-name="checkboxes"
             data-role="form-item"
           >
             <label
@@ -3321,7 +3349,7 @@ exports[`Renderer:checkboxes with removable & deleteApi: dialog open 1`] = `
               </span>
             </label>
             <div
-              class="cxd-CheckboxesControl cxd-Form-control is-inline"
+              class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
             >
               <label
                 class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"
@@ -3520,6 +3548,7 @@ exports[`Renderer:checkboxes with removable & deleteApi: hover edit 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="checkboxes"
           data-role="form-item"
         >
           <label
@@ -3536,7 +3565,7 @@ exports[`Renderer:checkboxes with removable & deleteApi: hover edit 1`] = `
             </span>
           </label>
           <div
-            class="cxd-CheckboxesControl cxd-Form-control is-inline"
+            class="cxd-CheckboxesControl cxd-Form-control is-inline is-thin"
           >
             <label
               class="cxd-Checkbox cxd-Checkbox--checkbox cxd-Checkbox--full"

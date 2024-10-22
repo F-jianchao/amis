@@ -307,6 +307,7 @@ export interface DateProps extends LocaleProps, ThemeProps {
     };
   };
   popOverContainer?: any;
+  popOverContainerSelector?: string;
   label?: string | false;
   borderMode?: 'full' | 'half' | 'none';
   // 是否为内嵌模式，如果开启就不是 picker 了，直接页面点选。
@@ -484,7 +485,9 @@ export class DatePicker extends React.Component<DateProps, DatePickerState> {
 
     if (prevValue !== props.value) {
       const newState: any = {
-        value: normalizeDate(props.value, props.valueFormat || props.format)
+        value: normalizeDate(props.value, props.valueFormat || props.format, {
+          utc: props.utc
+        })
       };
 
       newState.inputValue =
@@ -678,36 +681,35 @@ export class DatePicker extends React.Component<DateProps, DatePickerState> {
       value = maxDate;
     }
 
+    //  这段逻辑会导致视图上看着选择了0，但实际上是选择了当前时间
     /** 首次选择且当前未绑定值，则默认使用当前时间 */
-    if (!defaultValue && !!curTimeFormat && !isModified) {
-      const now = moment();
-      const timePart: Record<MutableUnitOfTime, number> = {
-        date: value.get('date'),
-        hour: value.get('hour'),
-        minute: value.get('minute'),
-        second: value.get('second'),
-        millisecond: value.get('millisecond')
-      };
+    // if (!defaultValue && !!curTimeFormat && !isModified) {
+    //   const now = moment();
+    //   const timePart: Record<MutableUnitOfTime, number> = {
+    //     date: value.get('date'),
+    //     hour: value.get('hour'),
+    //     minute: value.get('minute'),
+    //     second: value.get('second'),
+    //     millisecond: value.get('millisecond')
+    //   };
 
-      Object.keys(timePart).forEach((unit: MutableUnitOfTime) => {
-        /** 首次选择时间，日期使用当前时间; 将未设置过的时间字段设置为当前值 */
-        if (
-          (unit === 'date' && viewMode === 'time') ||
-          (unit !== 'date' && timePart[unit] === 0)
-        ) {
-          timePart[unit] = now.get(unit);
-        }
-      });
+    //   Object.keys(timePart).forEach((unit: MutableUnitOfTime) => {
+    //     /** 首次选择时间，日期使用当前时间; 将未设置过的时间字段设置为当前值 */
+    //     if (
+    //       (unit === 'date' && viewMode === 'time') ||
+    //       (unit !== 'date' && timePart[unit] === 0)
+    //     ) {
+    //       timePart[unit] = now.get(unit);
+    //     }
+    //   });
 
-      value.set(timePart);
-    }
+    //   value.set(timePart);
+    // }
 
     const updatedValue = utc
       ? moment.utc(value).format(valueFormat || format)
       : value.format(valueFormat || format);
-    const updatedInputValue = utc
-      ? moment.utc(value).format(displayFormat || inputFormat)
-      : value.format(displayFormat || inputFormat);
+    const updatedInputValue = value.format(displayFormat || inputFormat);
 
     if (isConfirmMode) {
       this.setState({value, inputValue: updatedInputValue});
@@ -744,7 +746,7 @@ export class DatePicker extends React.Component<DateProps, DatePickerState> {
       // 将输入的格式转成正则匹配，比如 YYYY-MM-DD HH:mm:ss 改成 \d\d\d\d\-
       // 只有匹配成功才更新
       const inputCheckRegex = new RegExp(
-        (valueFormat || inputFormat || displayFormat)!
+        (inputFormat || displayFormat)!
           .replace(/[ymdhs]/gi, '\\d')
           .replace(/-/gi, '\\-')
       );
@@ -929,6 +931,7 @@ export class DatePicker extends React.Component<DateProps, DatePickerState> {
       viewMode,
       timeConstraints,
       popOverContainer,
+      popOverContainerSelector,
       clearable,
       shortcuts,
       utc,
@@ -1130,6 +1133,7 @@ export class DatePicker extends React.Component<DateProps, DatePickerState> {
           <Overlay
             target={this.getTarget}
             container={popOverContainer || this.getParent}
+            containerSelector={popOverContainerSelector}
             rootClose={false}
             placement={overlayPlacement}
             show
@@ -1139,6 +1143,7 @@ export class DatePicker extends React.Component<DateProps, DatePickerState> {
               className={cx(`DatePicker-popover`, popoverClassName)}
               onHide={this.close}
               overlay
+              testIdBuilder={testIdBuilder?.getChild('popover')}
               onClick={this.handlePopOverClick}
             >
               {this.renderShortCuts(shortcuts)}

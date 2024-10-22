@@ -481,15 +481,36 @@ export default class Page extends React.Component<PageProps> {
 
     if (action.actionType === 'dialog') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
-      store.openDialog(
-        ctx,
-        undefined,
-        action.callback,
-        delegate || (this.context as any)
-      );
+      return new Promise<any>(resolve => {
+        store.openDialog(
+          ctx,
+          undefined,
+          (confirmed: any, value: any) => {
+            action.callback?.(confirmed, value);
+            resolve({
+              confirmed,
+              value
+            });
+          },
+          delegate || (this.context as any)
+        );
+      });
     } else if (action.actionType === 'drawer') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
-      store.openDrawer(ctx, undefined, undefined, delegate);
+      return new Promise<any>(resolve => {
+        store.openDrawer(
+          ctx,
+          undefined,
+          (confirmed: any, value: any) => {
+            action.callback?.(confirmed, value);
+            resolve({
+              confirmed,
+              value
+            });
+          },
+          delegate
+        );
+      });
     } else if (action.actionType === 'ajax') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
 
@@ -577,7 +598,7 @@ export default class Page extends React.Component<PageProps> {
       return;
     }
 
-    store.closeDialog(true);
+    store.closeDialog(true, values);
   }
 
   handleDialogClose(confirmed = false) {
@@ -605,12 +626,12 @@ export default class Page extends React.Component<PageProps> {
       return;
     }
 
-    store.closeDrawer();
+    store.closeDrawer(true, values);
   }
 
   handleDrawerClose() {
     const {store} = this.props;
-    store.closeDrawer();
+    store.closeDrawer(false);
   }
 
   handleClick(e: any) {
@@ -680,7 +701,7 @@ export default class Page extends React.Component<PageProps> {
     });
   }
 
-  reload(
+  async reload(
     subpath?: any,
     query?: any,
     ctx?: any,
@@ -694,12 +715,14 @@ export default class Page extends React.Component<PageProps> {
     const {store, initApi} = this.props;
 
     clearTimeout(this.timer);
-    isEffectiveApi(initApi, store.data) &&
-      store
-        .fetchData(initApi, store.data, {
-          silent
-        })
-        .then(this.initInterval);
+    if (isEffectiveApi(initApi, store.data)) {
+      const value = await store.fetchData(initApi, store.data, {
+        silent
+      });
+      this.initInterval(value);
+    }
+
+    return store.data;
   }
 
   receive(values: object, subPath?: string, replace?: boolean) {
@@ -797,7 +820,10 @@ export default class Page extends React.Component<PageProps> {
 
     const subProps = {
       onAction: this.handleAction,
-      onQuery: initApi ? this.handleQuery : undefined
+      onQuery: initApi ? this.handleQuery : undefined,
+      onChange: this.handleChange,
+      onBulkChange: this.handleBulkChange,
+      pageLoading: store.loading
     };
     let header, right;
 
@@ -880,48 +906,24 @@ export default class Page extends React.Component<PageProps> {
     return header || right;
   }
 
-  render() {
+  renderContent(subProps: any) {
     const {
-      className,
       store,
       body,
       bodyClassName,
       render,
-      aside,
-      asideClassName,
       classnames: cx,
       showErrorMsg,
-      initApi,
       regions,
-      style,
-      data,
-      asideResizor,
-      asideSticky,
-      pullRefresh,
-      mobileUI,
       translate: __,
       loadingConfig,
+      initApi,
       id,
-      wrapperCustomStyle,
       env,
       themeCss
     } = this.props;
 
-    const subProps = {
-      onAction: this.handleAction,
-      onQuery: initApi ? this.handleQuery : undefined,
-      onChange: this.handleChange,
-      onBulkChange: this.handleBulkChange,
-      pageLoading: store.loading
-    };
-
-    const hasAside = Array.isArray(regions)
-      ? ~regions.indexOf('aside')
-      : aside && (!Array.isArray(aside) || aside.length);
-
-    const styleVar = buildStyle(style, data);
-
-    const pageContent = (
+    return (
       <div className={cx('Page-content')}>
         <div className={cx('Page-main')}>
           {this.renderHeader()}
@@ -966,6 +968,49 @@ export default class Page extends React.Component<PageProps> {
         </div>
       </div>
     );
+  }
+
+  render() {
+    const {
+      className,
+      store,
+      body,
+      bodyClassName,
+      render,
+      aside,
+      asideClassName,
+      classnames: cx,
+      showErrorMsg,
+      initApi,
+      regions,
+      style,
+      data,
+      asideResizor,
+      asideSticky,
+      pullRefresh,
+      mobileUI,
+      translate: __,
+      loadingConfig,
+      id,
+      wrapperCustomStyle,
+      env,
+      themeCss
+    } = this.props;
+
+    const subProps = {
+      onAction: this.handleAction,
+      onQuery: initApi ? this.handleQuery : undefined,
+      onChange: this.handleChange,
+      onBulkChange: this.handleBulkChange,
+      pageLoading: store.loading
+    };
+
+    const hasAside = Array.isArray(regions)
+      ? ~regions.indexOf('aside')
+      : aside && (!Array.isArray(aside) || aside.length);
+
+    const styleVar = buildStyle(style, data);
+    const pageContent = this.renderContent(subProps);
 
     return (
       <div
@@ -1140,7 +1185,7 @@ export class PageRenderer extends Page {
     scoped.reload(target, data);
   }
 
-  handleAction(
+  async handleAction(
     e: React.UIEvent<any>,
     action: ActionObject,
     ctx: object,
@@ -1165,7 +1210,13 @@ export class PageRenderer extends Page {
           );
       });
     } else {
-      super.handleAction(e, action, ctx, throwErrors, delegate);
+      const ret = await super.handleAction(
+        e,
+        action,
+        ctx,
+        throwErrors,
+        delegate
+      );
 
       if (
         action.reload &&
@@ -1173,6 +1224,8 @@ export class PageRenderer extends Page {
       ) {
         scoped.reload(action.reload, ctx);
       }
+
+      return ret;
     }
   }
 

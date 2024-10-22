@@ -253,6 +253,7 @@ register('de-DE', {
   'Table.valueField': 'valueField muss vorhanden sein',
   'Table.index': 'Index',
   'Table.add': 'Neu',
+  'Table.subAddRow': 'Unterzeile hinzufügen',
   'Table.addButtonDisabledTip':
     'Reichen Sie bei der Inhaltsbearbeitung zuerst ein und erstellen Sie dann eine neue Option',
   'Table.toggleColumn': 'Spalten anzeigen',
@@ -393,16 +394,26 @@ register('de-DE', {
   'expand': 'Entfalten',
   'FormulaEditor.btnLabel': 'Formel Bearbeiten',
   'FormulaEditor.title': 'Formel Editor',
+  'FormulaEditor.run': 'Laufen',
+  'FormulaEditor.sourceMode': 'Source Mode',
+  'FormulaEditor.runContext': 'Run Context',
+  'FormulaEditor.runResult': 'Run Result',
+  'FormulaEditor.toggleAll': 'Expand All',
   'FormulaEditor.variable': 'Variable',
   'FormulaEditor.function': 'Funktion',
   'FormulaEditor.invalidData':
     'Überprüfungsfehler, position or reason is {{err}}',
   'FormulaEditor.invalidValue':
     'Überprüfungsfehler, reason is Falsches Werteformat',
+  'pullRefresh.normalText': '',
   'pullRefresh.pullingText': 'Zum Aktualisieren nach unten ziehen...',
   'pullRefresh.loosingText': 'Zum Aktualisieren freigeben...',
   'pullRefresh.loadingText': 'Laden...',
   'pullRefresh.successText': 'Laden erfolgreich',
+  'pullRefresh.completedText': 'Keine weiteren Daten',
+  'pullRefresh.crud2NormalText': 'Wischen Sie nach oben, um mehr zu laden',
+  'pullRefresh.crud2PullingText': 'Wischen Sie nach oben, um mehr zu laden',
+  'pullRefresh.crud2LoosingText': 'Freigabe zum Laden',
   'Picker.placeholder': 'Klicken Sie rechts auf das Symbol',
   'UserSelect.edit': 'bearbeiten',
   'UserSelect.save': 'Konservierung',
@@ -427,6 +438,7 @@ register('de-DE', {
   'JSONSchema.array_items': 'Artikel',
   'JSONSchema.members': 'Mitglieder',
   'JSONSchema.key_duplicated': 'Schlüssel existiert bereits',
+  'JSONSchema.key_invalid': 'Schlüssel ungültig',
   'TimeNow': 'Jetzt',
   'Steps.step': 'Schritt {{index}}',
   'FormulaInput.True': 'Treu',
@@ -435,5 +447,7 @@ register('de-DE', {
   'Signature.undo': 'widerrufen',
   'Signature.confirm': 'bestätigen',
   'Signature.cancel': 'Abbrechen',
-  'Signature.embedLabel': 'Klicken Sie zum Signieren'
+  'Signature.embedLabel': 'Klicken Sie zum Signieren',
+  'QRCode.tooLong':
+    'Der QR-Code-Wert ist zu lang, bitte setzen Sie den Text auf weniger als {{max}} Zeichen.'
 });

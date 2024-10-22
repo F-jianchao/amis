@@ -3,10 +3,17 @@ import {render, toast, makeTranslator, LazyComponent, Drawer} from 'amis';
 import axios from 'axios';
 import Portal from 'react-overlays/Portal';
 import {normalizeLink} from 'amis-core';
-import {withRouter} from 'react-router';
+import {withRouter} from 'react-router-dom';
 import copy from 'copy-to-clipboard';
-import {qsparse, parseQuery, attachmentAdpator} from 'amis-core';
+import {
+  qsparse,
+  parseQuery,
+  attachmentAdpator,
+  supportsMjs,
+  setGlobalOptions
+} from 'amis-core';
 import isPlainObject from 'lodash/isPlainObject';
+import {pdfUrlLoad} from '../loadPdfjsWorker';
 
 function loadEditor() {
   return new Promise(resolve =>
@@ -15,6 +22,10 @@ function loadEditor() {
 }
 
 const viewMode = localStorage.getItem('amis-viewMode') || 'pc';
+
+setGlobalOptions({
+  pdfjsWorkerSrc: supportsMjs() ? pdfUrlLoad() : ''
+});
 
 /**
  *
@@ -247,7 +258,6 @@ export default function (schema, schemaProps, showCode, envOverrides) {
             });
           },
           // 是否开启测试 testid
-          // enableTestid: true,
           ...envOverrides
         };
 

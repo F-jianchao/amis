@@ -4,7 +4,7 @@ import type {RootProps} from './Root';
 import {IScopedContext, ScopedContext, filterTarget} from './Scoped';
 import {IRootStore, RootStore} from './store/root';
 import {ActionObject} from './types';
-import {bulkBindFunctions, guid, isVisible} from './utils/helper';
+import {bulkBindFunctions, guid, isVisible, JSONTraverse} from './utils/helper';
 import {filter} from './utils/tpl';
 import qs from 'qs';
 import pick from 'lodash/pick';
@@ -12,6 +12,8 @@ import mapValues from 'lodash/mapValues';
 import {saveAs} from 'file-saver';
 import {normalizeApi} from './utils/api';
 import {findDOMNode} from 'react-dom';
+import LazyComponent from './components/LazyComponent';
+import {hasAsyncRenderers, loadAsyncRenderersByType} from './factory';
 
 export interface RootRendererProps extends RootProps {
   location?: any;
@@ -46,6 +48,25 @@ export class RootRenderer extends React.Component<RootRendererProps> {
       'handleDrawerClose',
       'handlePageVisibilityChange'
     ]);
+
+    this.store.init(() => {
+      if (!hasAsyncRenderers()) {
+        return;
+      }
+      const schema = props.schema;
+      const types: Array<string> = ['tpl', 'dialog', 'drawer'];
+      JSONTraverse(schema, (value: any, key: string) => {
+        if (key === 'type') {
+          types.push(value);
+
+          // form 依赖 panel
+          if (value === 'form') {
+            types.push('panel');
+          }
+        }
+      });
+      return loadAsyncRenderersByType(types, true);
+    });
   }
 
   componentDidMount() {
@@ -119,7 +140,7 @@ export class RootRenderer extends React.Component<RootRendererProps> {
     ctx: object,
     throwErrors: boolean = false,
     delegate?: IScopedContext
-  ) {
+  ): any {
     const {env, messages, onAction, mobileUI, render} = this.props;
     const store = this.store;
 
@@ -176,15 +197,36 @@ export class RootRenderer extends React.Component<RootRendererProps> {
       window.open(mailto);
     } else if (action.actionType === 'dialog') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
-      store.openDialog(
-        ctx,
-        undefined,
-        action.callback,
-        delegate || (this.context as any)
-      );
+      return new Promise<any>(resolve => {
+        store.openDialog(
+          ctx,
+          undefined,
+          (confirmed: any, value: any) => {
+            action.callback?.(confirmed, value);
+            resolve({
+              confirmed,
+              value
+            });
+          },
+          delegate || (this.context as any)
+        );
+      });
     } else if (action.actionType === 'drawer') {
       store.setCurrentAction(action, this.props.resolveDefinitions);
-      store.openDrawer(ctx, undefined, undefined, delegate);
+      return new Promise<any>(resolve => {
+        store.openDrawer(
+          ctx,
+          undefined,
+          (confirmed: any, value: any) => {
+            action.callback?.(confirmed, value);
+            resolve({
+              confirmed,
+              value
+            });
+          },
+          delegate
+        );
+      });
     } else if (action.actionType === 'toast') {
       action.toast?.items?.forEach((item: any) => {
         env.notify(
@@ -287,7 +329,7 @@ export class RootRenderer extends React.Component<RootRendererProps> {
     const reload = action.reload ?? dialogAction.reload;
     const scoped = store.getDialogScoped() || (this.context as IScopedContext);
 
-    store.closeDialog(true);
+    store.closeDialog(true, values);
 
     if (reload) {
       scoped.reload(reload, store.data);
@@ -323,7 +365,7 @@ export class RootRenderer extends React.Component<RootRendererProps> {
     const reload = action.reload ?? drawerAction.reload;
     const scoped = store.getDrawerScoped() || (this.context as IScopedContext);
 
-    store.closeDrawer();
+    store.closeDrawer(true, values);
 
     // 稍等会，等动画结束。
     setTimeout(() => {
@@ -335,7 +377,7 @@ export class RootRenderer extends React.Component<RootRendererProps> {
 
   handleDrawerClose() {
     const store = this.store;
-    store.closeDrawer();
+    store.closeDrawer(false);
   }
 
   openFeedback(dialog: any, ctx: any) {
@@ -478,6 +520,8 @@ export class RootRenderer extends React.Component<RootRendererProps> {
 
     if (store.runtimeError) {
       return this.renderRuntimeError();
+    } else if (!store.ready) {
+      return <LazyComponent className="RootLoader" />;
     }
 
     return (

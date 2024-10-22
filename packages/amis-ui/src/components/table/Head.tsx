@@ -23,6 +23,7 @@ import Cell from './Cell';
 import HeadCellSort from './HeadCellSort';
 import HeadCellFilter from './HeadCellFilter';
 import HeadCellSelect from './HeadCellSelect';
+import type {TestIdBuilder} from 'amis-core';
 
 export interface Props extends ThemeProps {
   draggable: boolean;
@@ -48,6 +49,7 @@ export interface Props extends ThemeProps {
   onSelectAll: Function;
   onFilter?: Function;
   onResizeMouseDown: Function;
+  testIdBuilder?: TestIdBuilder;
 }
 
 export default class Head extends React.PureComponent<Props> {
@@ -58,8 +60,17 @@ export default class Head extends React.PureComponent<Props> {
   tdColumns: Array<TdProps>;
 
   prependColumns(columns: Array<any>) {
-    const {rowSelectionFixed, expandableFixed, draggable} = this.props;
-    if (draggable) {
+    const {
+      rowSelectionFixed,
+      expandableFixed,
+      draggable,
+      selectable,
+      expandable
+    } = this.props;
+    if (expandable) {
+      columns.unshift({});
+    }
+    if (draggable || selectable) {
       columns.unshift({});
     } else {
       if (expandableFixed) {
@@ -121,7 +132,9 @@ export default class Head extends React.PureComponent<Props> {
       onSort,
       onSelectAll,
       onFilter,
-      onResizeMouseDown
+      onResizeMouseDown,
+      testIdBuilder,
+      className
     } = this.props;
 
     const {thColumns, tdColumns} = getBuildColumns(columns);
@@ -130,7 +143,7 @@ export default class Head extends React.PureComponent<Props> {
 
     // 获取一行最多th个数
     let maxCount = 0;
-    columns.forEach(cols => {
+    this.thColumns.forEach(cols => {
       if (cols.length > maxCount) {
         maxCount = cols.length;
       }
@@ -162,9 +175,9 @@ export default class Head extends React.PureComponent<Props> {
     const selectedKeys = selectedRowKeys.filter((key: number | string) =>
       rowKeys.includes(key)
     );
-
+    let thIndex = 0;
     return (
-      <thead ref={this.domRef} className={cx('Table-thead')}>
+      <thead ref={this.domRef} className={cx('Table-thead', className)}>
         {this.thColumns.map((data, index) => {
           return (
             <tr key={'th-cell-' + index}>
@@ -177,6 +190,7 @@ export default class Head extends React.PureComponent<Props> {
                   col="drag"
                   classnames={cx}
                   classPrefix={classPrefix}
+                  testIdBuilder={testIdBuilder?.getChild(`drag-${index}`)}
                 ></Cell>
               ) : null}
               {!draggable && selectable && index === 0 ? (
@@ -189,6 +203,7 @@ export default class Head extends React.PureComponent<Props> {
                   col="select"
                   classnames={cx}
                   classPrefix={classPrefix}
+                  testIdBuilder={testIdBuilder?.getChild(`select-${index}`)}
                 >
                   {rowSelectionType !== 'radio'
                     ? [
@@ -225,6 +240,7 @@ export default class Head extends React.PureComponent<Props> {
               ) : null}
               {isLeftExpandable && index === 0 ? expandableCell : null}
               {data.map((item: any, colIndex: number) => {
+                thIndex++;
                 let sort = null;
                 if (item.sorter) {
                   sort = (
@@ -234,6 +250,9 @@ export default class Head extends React.PureComponent<Props> {
                       onSort={(payload: SortProps) => {
                         onSort && onSort(payload, item);
                       }}
+                      testIdBuilder={testIdBuilder?.getChild(
+                        `sort-${colIndex}`
+                      )}
                     ></HeadCellSort>
                   );
                 }
@@ -247,6 +266,9 @@ export default class Head extends React.PureComponent<Props> {
                       column={item}
                       popOverContainer={popOverContainer}
                       onFilter={onFilter}
+                      testIdBuilder={testIdBuilder?.getChild(
+                        `filter-${colIndex}`
+                      )}
                     ></HeadCellFilter>
                   );
                 }
@@ -295,12 +317,11 @@ export default class Head extends React.PureComponent<Props> {
                     classPrefix={classPrefix}
                     fixed={item.fixed === true ? 'left' : item.fixed}
                     className={cx({
-                      'Table-cell-last':
-                        colIndex === maxCount - 1 &&
-                        colIndex === data.length - 1
+                      'Table-cell-last': thIndex === maxCount
                     })}
                     depth={item.depth}
                     col={String(colIndex)}
+                    testIdBuilder={testIdBuilder?.getChild(`cell-${colIndex}`)}
                   >
                     {typeof item.title === 'function'
                       ? item.title(children)

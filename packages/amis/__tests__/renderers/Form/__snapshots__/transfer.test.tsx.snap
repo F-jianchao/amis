@@ -46,6 +46,7 @@ exports[`Renderer:transfer 1`] = `
                 />
                 <div
                   class="cxd-Form-item cxd-Form-item--normal"
+                  data-amis-name="transfer"
                   data-role="form-item"
                 >
                   <label
@@ -352,6 +353,7 @@ exports[`Renderer:transfer associated mode with virtual 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="b"
           data-role="form-item"
         >
           <label
@@ -724,45 +726,6 @@ exports[`Renderer:transfer associated mode with virtual 1`] = `
                             </div>
                           </div>
                         </div>
-                        <div
-                          class="resize-sensor"
-                          style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-                        >
-                          
-  
-                          <div
-                            class="resize-sensor-expand"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                          >
-                            
-    
-                            <div
-                              style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-                            />
-                            
-  
-                          </div>
-                          
-  
-                          <div
-                            class="resize-sensor-shrink"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                          >
-                            
-    
-                            <div
-                              style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-                            />
-                            
-  
-                          </div>
-                          
-  
-                          <div
-                            class="resize-sensor-appear"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-                          />
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -872,6 +835,7 @@ exports[`Renderer:transfer chained 1`] = `
                 />
                 <div
                   class="cxd-Form-item cxd-Form-item--normal"
+                  data-amis-name="transfer5"
                   data-role="form-item"
                 >
                   <label
@@ -1087,6 +1051,7 @@ exports[`Renderer:transfer chained mode with virtual 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="transfer"
           data-role="form-item"
         >
           <label
@@ -1399,45 +1364,6 @@ exports[`Renderer:transfer chained mode with virtual 1`] = `
                           </div>
                         </div>
                       </div>
-                      <div
-                        class="resize-sensor"
-                        style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-                      >
-                        
-  
-                        <div
-                          class="resize-sensor-expand"
-                          style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                        >
-                          
-    
-                          <div
-                            style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-                          />
-                          
-  
-                        </div>
-                        
-  
-                        <div
-                          class="resize-sensor-shrink"
-                          style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                        >
-                          
-    
-                          <div
-                            style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-                          />
-                          
-  
-                        </div>
-                        
-  
-                        <div
-                          class="resize-sensor-appear"
-                          style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1533,6 +1459,7 @@ exports[`Renderer:transfer follow left mode 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="transfer4"
           data-role="form-item"
         >
           <label
@@ -2170,6 +2097,7 @@ exports[`Renderer:transfer follow left mode 2`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="transfer4"
           data-role="form-item"
         >
           <label
@@ -2828,6 +2756,7 @@ exports[`Renderer:transfer group mode with virtual 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="transfer"
           data-role="form-item"
         >
           <label
@@ -3032,45 +2961,6 @@ exports[`Renderer:transfer group mode with virtual 1`] = `
                         </div>
                       </div>
                     </div>
-                    <div
-                      class="resize-sensor"
-                      style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-                    >
-                      
-  
-                      <div
-                        class="resize-sensor-expand"
-                        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                      >
-                        
-    
-                        <div
-                          style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-                        />
-                        
-  
-                      </div>
-                      
-  
-                      <div
-                        class="resize-sensor-shrink"
-                        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                      >
-                        
-    
-                        <div
-                          style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-                        />
-                        
-  
-                      </div>
-                      
-  
-                      <div
-                        class="resize-sensor-appear"
-                        style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
@@ -3178,6 +3068,7 @@ exports[`Renderer:transfer left tree 1`] = `
                 />
                 <div
                   class="cxd-Form-item cxd-Form-item--normal"
+                  data-amis-name="b"
                   data-role="form-item"
                 >
                   <label
@@ -3677,6 +3568,7 @@ exports[`Renderer:transfer table 1`] = `
                 />
                 <div
                   class="cxd-Form-item cxd-Form-item--normal"
+                  data-amis-name="transfer"
                   data-role="form-item"
                 >
                   <label
@@ -4055,6 +3947,7 @@ exports[`Renderer:transfer table mode with virtual: result not virtual 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="transfer"
           data-role="form-item"
         >
           <label
@@ -4552,45 +4445,6 @@ exports[`Renderer:transfer table mode with virtual: result not virtual 1`] = `
                             style="position: absolute; width: 1px; white-space: nowrap; min-height: 100%; height: 7600px; top: 0px; visibility: hidden;"
                           />
                         </div>
-                        <div
-                          class="resize-sensor"
-                          style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-                        >
-                          
-  
-                          <div
-                            class="resize-sensor-expand"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                          >
-                            
-    
-                            <div
-                              style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-                            />
-                            
-  
-                          </div>
-                          
-  
-                          <div
-                            class="resize-sensor-shrink"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                          >
-                            
-    
-                            <div
-                              style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-                            />
-                            
-  
-                          </div>
-                          
-  
-                          <div
-                            class="resize-sensor-appear"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-                          />
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -4916,6 +4770,7 @@ exports[`Renderer:transfer table mode with virtual: result virtual 1`] = `
         />
         <div
           class="cxd-Form-item cxd-Form-item--normal"
+          data-amis-name="transfer"
           data-role="form-item"
         >
           <label
@@ -5164,45 +5019,6 @@ exports[`Renderer:transfer table mode with virtual: result virtual 1`] = `
                             style="position: absolute; width: 1px; white-space: nowrap; min-height: 100%; height: 7600px; top: 0px; visibility: hidden;"
                           />
                         </div>
-                        <div
-                          class="resize-sensor"
-                          style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-                        >
-                          
-  
-                          <div
-                            class="resize-sensor-expand"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                          >
-                            
-    
-                            <div
-                              style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-                            />
-                            
-  
-                          </div>
-                          
-  
-                          <div
-                            class="resize-sensor-shrink"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                          >
-                            
-    
-                            <div
-                              style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-                            />
-                            
-  
-                          </div>
-                          
-  
-                          <div
-                            class="resize-sensor-appear"
-                            style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-                          />
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -5344,45 +5160,6 @@ exports[`Renderer:transfer table mode with virtual: result virtual 1`] = `
                           </div>
                         </div>
                       </div>
-                      <div
-                        class="resize-sensor"
-                        style="position: absolute; left: 0px; top: 0px; right: 0px; bottom: 0px; overflow: scroll; z-index: -1; visibility: hidden;"
-                      >
-                        
-  
-                        <div
-                          class="resize-sensor-expand"
-                          style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                        >
-                          
-    
-                          <div
-                            style="position: absolute; left: 0px; top: 0px; width: 10px; height: 10px;"
-                          />
-                          
-  
-                        </div>
-                        
-  
-                        <div
-                          class="resize-sensor-shrink"
-                          style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;"
-                        >
-                          
-    
-                          <div
-                            style="position: absolute; left: 0; top: 0; width: 200%; height: 200%"
-                          />
-                          
-  
-                        </div>
-                        
-  
-                        <div
-                          class="resize-sensor-appear"
-                          style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -5458,6 +5235,7 @@ exports[`Renderer:transfer tree 1`] = `
                 />
                 <div
                   class="cxd-Form-item cxd-Form-item--normal"
+                  data-amis-name="transfer4"
                   data-role="form-item"
                 >
                   <label
@@ -5967,6 +5745,7 @@ exports[`Renderer:transfer with showInvalidMatch & unmatched do not add 1`] = `
 <div>
   <div
     class="cxd-Form-item cxd-Form-item--normal"
+    data-amis-name="transfer"
     data-role="form-item"
   >
     <label
