@@ -99,9 +99,7 @@ export interface JSONSchemaEditorProps
       'type' | 'className' | 'descriptionClassName' | 'inputClassName'
     > {}
 
-export default class JSONSchemaEditorControl extends React.PureComponent<
-  JSONSchemaEditorProps
-> {
+export default class JSONSchemaEditorControl extends React.PureComponent<JSONSchemaEditorProps> {
   static defaultProps = {
     enableAdvancedSetting: false,
     placeholder: schemaEditorItemPlaceholder
