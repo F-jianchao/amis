@@ -26,7 +26,7 @@ import {
   isIntegerInRange,
   setThemeClassName
 } from 'amis-core';
-import {Html, Icon, TooltipWrapper} from 'amis-ui';
+import {Html, Icon, OverflowTpl, TooltipWrapper} from 'amis-ui';
 import {FormOptionsSchema, SchemaTpl} from '../../Schema';
 import intersectionWith from 'lodash/intersectionWith';
 import type {TooltipWrapperSchema} from '../TooltipWrapper';
@@ -105,7 +105,7 @@ export interface PickerControlSchema extends FormOptionsSchema {
   /**
    * 选中项可删除，默认为true
    */
-  removable?: boolean;
+  itemClearable?: boolean;
 }
 
 export interface PickerProps extends OptionsControlProps {
@@ -456,7 +456,9 @@ export default class PickerControl extends React.PureComponent<
   }
 
   @autobind
-  handleFocus() {
+  handleFocus(e: React.MouseEvent<HTMLElement>) {
+    this.input.current && this.input.current.focus();
+    e.stopPropagation();
     this.setState({
       isFocused: true
     });
@@ -471,7 +473,6 @@ export default class PickerControl extends React.PureComponent<
 
   @autobind
   handleClick() {
-    this.input.current && this.input.current.focus();
     this.open();
   }
 
@@ -529,7 +530,7 @@ export default class PickerControl extends React.PureComponent<
 
   renderTag(item: Option, index: number) {
     const {
-      removable = true,
+      itemClearable = true,
       classPrefix: ns,
       classnames: cx,
       labelField,
@@ -543,7 +544,9 @@ export default class PickerControl extends React.PureComponent<
     } = this.props;
 
     return (
-      <div
+      <OverflowTpl
+        inline={false}
+        tooltip={getVariable(item, labelField || 'label')}
         key={index}
         className={cx(
           `${ns}Picker-value`,
@@ -558,7 +561,7 @@ export default class PickerControl extends React.PureComponent<
           }
         )}
       >
-        {removable && (
+        {itemClearable && (
           <span
             className={cx(
               `${ns}Picker-valueIcon`,
@@ -601,7 +604,7 @@ export default class PickerControl extends React.PureComponent<
             }`
           )}
         </span>
-      </div>
+      </OverflowTpl>
     );
   }
 
@@ -814,7 +817,7 @@ export default class PickerControl extends React.PureComponent<
                   value={''}
                   ref={this.input}
                   onKeyDown={this.handleKeyDown}
-                  onFocus={this.handleFocus}
+                  onClick={this.handleFocus}
                   onBlur={this.handleBlur}
                   readOnly={mobileUI}
                 />
